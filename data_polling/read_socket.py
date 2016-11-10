@@ -5,16 +5,20 @@ import socket
 import re
 import json
 import paho.mqtt.client as mqtt
+import logging
+import time
 from mqtt_publisher import MQTTPublisher
 
+logging.basicConfig(filename="log/"+str(int(time.time()))+'-read_socket.log',level=logging.DEBUG, format='%(asctime)s %(message)s')
+
 # SOCKET
-HOST = 'localhost'
-PORT = 30000
+HOST = '193.225.89.35'
+PORT = 5501
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((HOST, PORT))
 
 # MQTT
-BROKER_HOST = "localhost"
+BROKER_HOST = "almanac-broker"
 BROKER_PORT = 1883
 CLIENT_ID = "socket_forwarder"
 mqtt = MQTTPublisher(CLIENT_ID, BROKER_HOST, BROKER_PORT)
@@ -55,7 +59,8 @@ def track_loss(json_obj):
 		tracker = index-1
 
 	if tracker+1 != index:
-		print("[ERROR] Missing message. Expected: {}, Received: {}".format(tracker+1, index))
+		print("[WARNING] Missing message. Expected: {}, Received: {}".format(tracker+1, index))
+		logging.warning("Missing message. Expected: {}, Received: {}".format(tracker+1, index))
 	# update tracker
 	tracker = index
 	
@@ -83,6 +88,7 @@ while True:
 					handle(json_obj)
 				else:
 					print("[ERROR] Bad data: " + msg)
+					logging.debug("Bad data: " + msg)
 
 		buffer = iterator(data[1:])
 		#print ""
