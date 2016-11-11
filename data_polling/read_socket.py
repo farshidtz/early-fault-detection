@@ -6,10 +6,9 @@ import re
 import json
 import paho.mqtt.client as mqtt
 import logging
-import time
 from mqtt_publisher import MQTTPublisher
 
-logging.basicConfig(filename="log/"+str(int(time.time()))+'-read_socket.log',level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.basicConfig(filename='read_socket.log',level=logging.DEBUG, format='%(asctime)s %(message)s')
 
 # SOCKET
 HOST = '193.225.89.35'
@@ -70,30 +69,30 @@ def handle(json_obj):
 	mqtt.publish(json_obj)
 	#print(json_obj)
 
-
-buffer = ''
 while True:
-	data = s.recv(2048)	
-	if data:
-		data, _ = split_packet(data)
-		if data[0] != '':
-			msg = buffer+data[0]
-			split, multiple = split_packet(msg)
-			if multiple:
-				iterator(split)
-			else:
-				buffer = ''
-				json_obj, ok = parse_json(msg)
-				if ok:
-					handle(json_obj)
+	buffer = ''
+	while True:
+		data = s.recv(2048)	
+		if data:
+			data, _ = split_packet(data)
+			if data[0] != '':
+				msg = buffer+data[0]
+				split, multiple = split_packet(msg)
+				if multiple:
+					iterator(split)
 				else:
-					print("[ERROR] Bad data: " + msg)
-					logging.debug("Bad data: " + msg)
+					buffer = ''
+					json_obj, ok = parse_json(msg)
+					if ok:
+						handle(json_obj)
+					else:
+						print("[ERROR] Bad data: " + msg)
+						logging.error("Bad data: " + msg)
 
-		buffer = iterator(data[1:])
-		#print ""
+			buffer = iterator(data[1:])
+			#print ""
 
-	else:
-		break
-
-s.close()
+		else:
+			break
+	s.close()
+	logging.error("Connection Lost.")
