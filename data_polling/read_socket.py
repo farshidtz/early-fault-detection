@@ -69,30 +69,30 @@ def handle(json_obj):
 	mqtt.publish(json_obj)
 	#print(json_obj)
 
+
+buffer = ''
 while True:
-	buffer = ''
-	while True:
-		data = s.recv(2048)	
-		if data:
-			data, _ = split_packet(data)
-			if data[0] != '':
-				msg = buffer+data[0]
-				split, multiple = split_packet(msg)
-				if multiple:
-					iterator(split)
+	data = s.recv(2048)	
+	if data:
+		data, _ = split_packet(data)
+		if data[0] != '':
+			msg = buffer+data[0]
+			split, multiple = split_packet(msg)
+			if multiple:
+				iterator(split)
+			else:
+				buffer = ''
+				json_obj, ok = parse_json(msg)
+				if ok:
+					handle(json_obj)
 				else:
-					buffer = ''
-					json_obj, ok = parse_json(msg)
-					if ok:
-						handle(json_obj)
-					else:
-						print("[ERROR] Bad data: " + msg)
-						logging.error("Bad data: " + msg)
+					print("[ERROR] Bad data: " + msg)
+					logging.debug("Bad data: " + msg)
 
-			buffer = iterator(data[1:])
-			#print ""
+		buffer = iterator(data[1:])
+		#print ""
 
-		else:
-			break
-	s.close()
-	logging.error("Connection Lost.")
+	else:
+		break
+
+s.close()
