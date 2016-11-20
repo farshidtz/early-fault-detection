@@ -66,6 +66,8 @@ def SensorThings2Dict(json_string):
 	features = copy.deepcopy(Features)
 	j = json.loads(json_string)
 	total = j['ResultValue']['total']
+	if total != 51:
+		raise Exception("Total not 51.")
 	#type = j['ResultValue']['type']['e'][0]['sv']
 	#label = j['ResultValue']['label']['e'][0]['bv']
 	#name = j['ResultValue']['label']['bn']
