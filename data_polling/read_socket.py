@@ -39,6 +39,7 @@ def iterator(data):
 		else:
 			# partial json string in the end of message
 			return msg
+	return ''
 
 # parse and validate json
 def parse_json(myjson):
