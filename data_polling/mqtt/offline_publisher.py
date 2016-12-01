@@ -2,11 +2,12 @@ import paho.mqtt.client as mqtt
 from time import sleep
 
 mqttc = mqtt.Client("python-offline-publisher")
-mqttc.connect("almanac-broker", 1883)
+mqttc.connect("localhost", 1883)
+#mqttc.loop_forever()
 
-with open("data.txt") as f:
+with open("D:/smtline-161117-0.05fr_0.txt") as f:
     for line in f:
-		#print(line)
+		#print(line.strip('\n'))
 		mqttc.publish("offline/data", line.strip('\n'), qos=2)
 		mqttc.loop()
-		sleep(0.001)
+		#sleep(0.001)
