@@ -56,6 +56,7 @@ PORT = 5502
 # HOST = 'localhost'
 # PORT = 9999
 def send_feedback(id):
+	print("{}: Sending feedback to production line...".format(id))
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	sock.connect((HOST, PORT))
 	try:
@@ -98,6 +99,7 @@ def handler(json_string):
 		}
 		products[bn]["ResultValue"]["total"] = 0
 		products[bn]["ResultValue"]["current_station"] = j['ResultValue']['type']['e'][0]['n']
+		products[bn]["ResultValue"]["flag_faulty"] = False
 
 	# FunctionTest/Quality_OK is in "measurements" here rather than "label"
 	if feature_name == "FunctionTest/Quality_OK":
@@ -119,7 +121,10 @@ def handler(json_string):
 		# print("Status: {} Response: {}".format(r.status_code, r.json()))
 		res = agent.predict(json_data)
 		print("Response: {}".format(res))
-		if res['prediction'] == 1:
+
+		# send faulty feedback (only once)
+		if res['prediction'] == 1 and not products[bn]["ResultValue"]["flag_faulty"]:
+			products[bn]["ResultValue"]["flag_faulty"] = True
 			send_feedback(bn)
 
 

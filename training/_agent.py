@@ -96,7 +96,6 @@ class Agent(object):
         #print("Prediction: {}".format(p))
 
         # functional test is done
-        print(features[-1])
         if features[-1] != None:
             label = np.array(features[-1]=='False').astype(np.int)
             if label != p:
