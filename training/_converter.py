@@ -60,30 +60,35 @@ Features = OrderedDict([
     ("Label",None)
 ])
 
+# reduce identical measurements to one feature
+def reduce_measurements(name):
+    # parallel stations
+    if name == "ConAssembly1/Con1Screw" or name == "ConAssembly2/Con2Screw":
+        return "ConAssembly1or2/Con1or2Screw"
+    if name == "PtAssembly2/Pt2" or name == "PtAssembly3/Pt2":
+        return "PtAssembly2or3/Pt2or3"
+    return name
 
-""" converts ResultValue of json OGC-SensorThings to python OrderedDict """
-def SensorThings2Dict(json_string):
-	features = copy.deepcopy(Features)
-	j = json.loads(json_string)
-	total = j['ResultValue']['total']
-	if total != 51:
-		raise Exception("Total not 51.")
-	#type = j['ResultValue']['type']['e'][0]['sv']
-	#label = j['ResultValue']['label']['e'][0]['bv']
-	#name = j['ResultValue']['label']['bn']
-	measurements = j['ResultValue']['measurements']['e']
-	features["Id"] = j['ResultValue']['label']['bn']
-	features["Type"] = j['ResultValue']['type']['e'][0]['sv']
-	features["Label"] = j['ResultValue']['label']['e'][0]['bv']
-	for entry in measurements:
-		#print('("{}",0),'.format(entry['n']))
-		feature_name = entry['n']
-		# parallel stations
-		if feature_name == "ConAssembly1/Con1Screw" or feature_name == "ConAssembly2/Con2Screw":
-			feature_name = "ConAssembly1or2/Con1or2Screw"
-		elif feature_name == "PtAssembly2/Pt2" or feature_name == "PtAssembly3/Pt2":
-			feature_name = "PtAssembly2or3/Pt2or3"
-		
-		features[feature_name] = entry['v']
-	
-	return features
+
+# converts ResultValue of json OGC-SensorThings to python OrderedDict
+def SensorThings2Dict(json_string, complete=True):
+    features = copy.deepcopy(Features)
+    j = json.loads(json_string)
+    total = j['ResultValue']['total']
+    if complete and total != 51:
+        raise Exception("Total not 51.")
+    #type = j['ResultValue']['type']['e'][0]['sv']
+    #label = j['ResultValue']['label']['e'][0]['bv']
+    #name = j['ResultValue']['label']['bn']
+    measurements = j['ResultValue']['measurements']['e']
+    features["Id"] = j['ResultValue']['type']['bn']
+    features["Type"] = j['ResultValue']['type']['e'][0]['sv']
+
+    if 'label' in j['ResultValue']:
+        features["Label"] = j['ResultValue']['label']['e'][0]['bv']
+
+    for entry in measurements:
+        feature_name = reduce_measurements(entry['n'])
+        features[feature_name] = entry['v']
+
+    return features

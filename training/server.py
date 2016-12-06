@@ -6,31 +6,34 @@ import logging
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
+from _agent import Agent
+agent = {}
+
 """ HANDLERS """
 @app.route("/build", methods=["POST"])
 def build_handler():
-	return json.dumps(build(request.json))
+	return json.dumps(build(json.loads(request.json)))
 
-@app.route("/train", methods=["POST"])
+@app.route("/learn", methods=["POST"])
 def train_handler():
-	return json.dumps(train(request.json))
+	return json.dumps(learn(request.json))
 
 @app.route("/predict", methods=["POST"])
 def predict_handler():
 	return json.dumps(predict(request.json))
 
+""" CONTROLLERS """
 def build(j):
-	print(j)
-	return {"built": "ack"}
+	global agent
+	agent = Agent(j)
+	agent.pre_train()
+	return True
 
-def train(j):
-	print(j)
-	return {"train": "ack"}
+def learn(j):
+	return agent.learn()
 
 def predict(j):
-	print(j)
-	#return {"predict": "prediction"}
-	return j
+	return agent.predict(j)
 
 if __name__ == "__main__":
 	app.run()

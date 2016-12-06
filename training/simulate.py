@@ -49,41 +49,80 @@ def on_message(client, userdata, msg):
 }
 """
 
-url = "http://localhost:5000/predict"
+import socket
+import sys
+HOST = '193.225.89.35'
+PORT = 5502
+# HOST = 'localhost'
+# PORT = 9999
+def send_feedback(id):
+	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	sock.connect((HOST, PORT))
+	try:
+	    sock.sendall(id)
+	finally:
+	    sock.close()
+
+from _agent import Agent
+agent = {}
+
+# configure model
+config = {
+	"trainfile" : "ABU1.txt",
+	"model" : "random_forest",
+	"model_conf" : {},
+	"trained_model": "tmp"
+}
+# r = requests.post("http://localhost:5000/build", json=json.dumps(config))
+# print(r)
+agent = Agent(config)
+agent.pre_train()
+
 products = {}
 def handler(json_string):
 	#features = copy.deepcopy(Features)
 	j = json.loads(json_string)
 	bn = j['ResultValue']['measurements']['bn']
-	
 	feature_name = j['ResultValue']['measurements']['e'][0]['n']
-	if feature_name == "ConAssembly1/Con1Screw" or feature_name == "ConAssembly2/Con2Screw":
-		feature_name = "ConAssembly1or2/Con1or2Screw"
-	elif feature_name == "PtAssembly2/Pt2" or feature_name == "PtAssembly3/Pt2":
-		feature_name = "PtAssembly2or3/Pt2or3"
-	
-	value = None
-	if feature_name == "FunctionTest/Quality_OK":
-		value = j['ResultValue']['measurements']['e'][0]['bv']
-	else:
-		value = j['ResultValue']['measurements']['e'][0]['v']
-		
+
+	# new product
 	if bn not in products:
+		# start from the beginning only
 		if feature_name != "ScreenPrinter/PositionX":
 			return
-		products[bn] = {}
-		products[bn]["Id"] = bn
-		products[bn]["TotalFeatures"] = 0
-	
-	products[bn][feature_name] = value
-	products[bn]["TotalFeatures"] += 1
-	
-	print("{}: {}".format(products[bn]["Id"], products[bn]["TotalFeatures"]))
-	json_data = json.dumps(products[bn])
-	r = requests.post(url, json=json_data)
-	print(r)
+		products[bn] = {"ResultValue":{}}
+		products[bn]["ResultValue"]["type"] = j['ResultValue']['type']
+		products[bn]["ResultValue"]["measurements"] = {
+			"bn": bn,
+			"e": []
+		}
+		products[bn]["ResultValue"]["total"] = 0
+		products[bn]["ResultValue"]["current_station"] = j['ResultValue']['type']['e'][0]['n']
 
-	
+	# FunctionTest/Quality_OK is in "measurements" here rather than "label"
+	if feature_name == "FunctionTest/Quality_OK":
+		products[bn]["ResultValue"]["label"] =  j['ResultValue']['measurements']
+	else:
+		products[bn]["ResultValue"]["measurements"]["e"].append( j['ResultValue']['measurements']['e'][0] )
+		products[bn]["ResultValue"]["total"] += 1
+
+	# keep track of stations
+	station = feature_name.partition('/')[0]
+	prev_station = products[bn]["ResultValue"]["current_station"]
+	products[bn]["ResultValue"]["current_station"] = station
+
+	if prev_station != station:
+		# print(feature_name)
+		print("{} @{} Measurements: {}".format(products[bn]["ResultValue"]["type"]['bn'], station, products[bn]["ResultValue"]["total"]))
+		json_data = json.dumps(products[bn])
+		# r = requests.post("http://localhost:5000/predict", json=json_data)
+		# print("Status: {} Response: {}".format(r.status_code, r.json()))
+		res = agent.predict(json_data)
+		print("Response: {}".format(res))
+		if res['prediction'] == 1:
+			send_feedback(bn)
+
+
 client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
