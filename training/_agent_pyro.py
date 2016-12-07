@@ -14,15 +14,16 @@ from _converter import SensorThings2Dict
 from _evaluation import print_metrics
 import _models
 
+@Pyro4.expose
 class Agent(object):
 
-    @Pyro4.oneway
+
     def build(self, config):
         self.model = config["model"]
         self.model_conf = config["model_conf"]
         self.trained_model = config["trained_model"]
 
-    @Pyro4.expose
+    
     def pre_train(self, trainfiles):
         if path.isfile(self.trained_model+'/model.pkl'):
             print("Loading pre-trained model from disk...")
@@ -88,11 +89,10 @@ class Agent(object):
         # save model to disk
         joblib.dump(clf, self.trained_model+'/model.pkl')
 
-    @Pyro4.oneway
     def learn(self, datapoint):
         print(datapoint)
 
-    @Pyro4.expose
+		
     def predict(self, datapoint):
         features = SensorThings2Dict(datapoint, complete=False)
         features = np.array(features.values())
