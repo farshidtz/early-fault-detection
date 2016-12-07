@@ -22,6 +22,8 @@ class Agent(object):
         self.model = config["model"]
         self.model_conf = config["model_conf"]
         self.trained_model = config["trained_model"]
+        self.corrects = 0
+        self.wrongs = 0
 
     
     def pre_train(self, trainfiles):
@@ -92,7 +94,7 @@ class Agent(object):
     def learn(self, datapoint):
         print(datapoint)
 
-		
+
     def predict(self, datapoint):
         features = SensorThings2Dict(datapoint, complete=False)
         features = np.array(features.values())
@@ -104,15 +106,17 @@ class Agent(object):
         start_time = time.time()
         p = self.clf.predict(r.reshape(1, -1))[0]
         elapsed_time = time.time() - start_time
-        print("Prediction: {} in {}s".format(p, elapsed_time))
+        #print("Prediction: {} in {}s".format(p, elapsed_time))
 
         # functional test is done
         if features[-1] != None:
             label = np.array(features[-1]=='False').astype(np.int)
             if label != p:
-                print("WRONG PREDICTION. Predicted {} Label was {}".format(p, label))
+                self.wrongs += 1
+                print("WRONG PREDICTION. Predicted {} Label was {} -- {} / {}".format(p, label, self.wrongs, self.corrects))
             else:
-                print("CORRECT")
+                self.corrects += 1
+                print("CORRECT -- {} / {}".format(self.corrects, self.corrects+self.wrongs))
 
         return {'prediction': p.item()}
 
