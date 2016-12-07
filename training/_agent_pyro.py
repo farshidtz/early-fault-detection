@@ -1,10 +1,13 @@
 """
 Training / Prediction Agent
 """
+import Pyro4
 import copy
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+import json
+import time
 from sklearn.externals import joblib
 from os import path
 from _converter import SensorThings2Dict
@@ -13,11 +16,13 @@ import _models
 
 class Agent(object):
 
-    def __init__(self, config):
+    @Pyro4.oneway
+    def build(self, config):
         self.model = config["model"]
         self.model_conf = config["model_conf"]
         self.trained_model = config["trained_model"]
 
+    @Pyro4.expose
     def pre_train(self, trainfiles):
         if path.isfile(self.trained_model+'/model.pkl'):
             print("Loading pre-trained model from disk...")
@@ -82,9 +87,11 @@ class Agent(object):
         # save model to disk
         joblib.dump(clf, self.trained_model+'/model.pkl')
 
+    @Pyro4.oneway
     def learn(self, datapoint):
         print(datapoint)
 
+    @Pyro4.expose
     def predict(self, datapoint):
         features = SensorThings2Dict(datapoint, complete=False)
         features = np.array(features.values())
@@ -93,8 +100,10 @@ class Agent(object):
         # fill nans with global means
         w = np.where(np.isnan(r))
         r[w] = self.means[w]
+        start_time = time.time()
         p = self.clf.predict(r.reshape(1, -1))[0]
-        #print("Prediction: {}".format(p))
+        elapsed_time = time.time() - start_time
+        print("Prediction: {} in {}s".format(p, elapsed_time))
 
         # functional test is done
         if features[-1] != None:
@@ -104,4 +113,11 @@ class Agent(object):
             else:
                 print("CORRECT")
 
-        return {'prediction': p}
+        return {'prediction': p.item()}
+
+# Start Pyro
+Pyro4.config.SERIALIZER = 'pickle'
+daemon = Pyro4.Daemon()
+uri = daemon.register(Agent)
+print(uri)
+daemon.requestLoop()

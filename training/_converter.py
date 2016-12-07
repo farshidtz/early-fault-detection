@@ -1,7 +1,5 @@
-import json
 from collections import OrderedDict
 import copy
-import numpy as np
 
 Features = OrderedDict([
     ("Id",None),
@@ -71,9 +69,8 @@ def reduce_measurements(name):
 
 
 # converts ResultValue of json OGC-SensorThings to python OrderedDict
-def SensorThings2Dict(json_string, complete=True):
+def SensorThings2Dict(j, complete=True):
     features = copy.deepcopy(Features)
-    j = json.loads(json_string)
     total = j['ResultValue']['total']
     if complete and total != 51:
         raise Exception("Total not 51.")

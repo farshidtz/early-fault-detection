@@ -1,6 +1,8 @@
+import Pyro4
 import paho.mqtt.client as mqtt
 import json
-import requests
+import threading
+import time
 
 BROKER_HOST = "almanac-broker"
 BROKER_PORT = 1883
@@ -64,8 +66,6 @@ def send_feedback(id):
 	finally:
 	    sock.close()
 
-from _agent import Agent
-agent = {}
 
 # configure model
 config = {
@@ -73,9 +73,9 @@ config = {
 	"model_conf" : {},
 	"trained_model": "tmp"
 }
-# r = requests.post("http://localhost:5000/build", json=json.dumps(config))
-# print(r)
-agent = Agent(config)
+import sys
+agent = Pyro4.Proxy(sys.argv[1])
+agent.build(config)
 agent.pre_train(["ABU1.txt", "ABU1.2.txt"])
 
 products = {}
@@ -115,11 +115,10 @@ def handler(json_string):
 	if prev_station != station:
 		# print(feature_name)
 		print("{} @{} Measurements: {}".format(products[bn]["ResultValue"]["type"]['bn'], station, products[bn]["ResultValue"]["total"]))
-		json_data = json.dumps(products[bn])
-		# r = requests.post("http://localhost:5000/predict", json=json_data)
-		# print("Status: {} Response: {}".format(r.status_code, r.json()))
-		res = agent.predict(json_data)
-		print("Response: {}".format(res))
+		start_time = time.time()
+		res = agent.predict(products[bn])
+		elapsed_time = time.time() - start_time
+		print("Response: {} in {}s".format(res, elapsed_time))
 
 		# send faulty feedback (only once)
 		if res['prediction'] == 1 and not products[bn]["ResultValue"]["flag_faulty"]:
