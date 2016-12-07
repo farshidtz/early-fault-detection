@@ -90,3 +90,5 @@ ENV/
 
 # Non-Python stuff
 *.jar
+.idea/
+data-processing-agent/.idea/
