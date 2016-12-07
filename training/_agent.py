@@ -4,6 +4,7 @@ Training / Prediction Agent
 import copy
 import numpy as np
 import random
+import json
 import matplotlib.pyplot as plt
 from sklearn.externals import joblib
 from os import path
@@ -32,9 +33,10 @@ class Agent(object):
             with open(filename) as f:
                 for line in f:
                     try:
-                        features = SensorThings2Dict(line)
+                        features = SensorThings2Dict(json.loads(line))
                         data.append(list(features.values()))
                     except Exception, e:
+                        # print(e)
                         bad+=1
 
         print("Incomplete rows: {}".format(bad))
