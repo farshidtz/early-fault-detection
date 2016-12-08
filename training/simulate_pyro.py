@@ -73,8 +73,9 @@ config = {
 	"model_conf" : {},
 	"trained_model": "tmp"
 }
-import sys
-agent = Pyro4.Proxy(sys.argv[1])
+
+pyro_name = "python-learning-agent"
+agent = Pyro4.Proxy("PYRONAME:"+pyro_name)
 agent.build(config)
 agent.pre_train(["ABU1.txt", "ABU1.2.txt"])
 

@@ -17,13 +17,12 @@ import _models
 @Pyro4.expose
 class Agent(object):
 
-
     def build(self, config):
         self.model = config["model"]
         self.model_conf = config["model_conf"]
         self.trained_model = config["trained_model"]
 
-    
+
     def pre_train(self, trainfiles):
         if path.isfile(self.trained_model+'/model.pkl'):
             print("Loading pre-trained model from disk...")
@@ -92,7 +91,7 @@ class Agent(object):
     def learn(self, datapoint):
         print(datapoint)
 
-		
+
     def predict(self, datapoint):
         features = SensorThings2Dict(datapoint, complete=False)
         features = np.array(features.values())
@@ -119,6 +118,8 @@ class Agent(object):
 # Start Pyro
 Pyro4.config.SERIALIZER = 'pickle'
 daemon = Pyro4.Daemon()
+ns = Pyro4.locateNS()
 uri = daemon.register(Agent)
+ns.register("python-learning-agent", uri)
 print(uri)
 daemon.requestLoop()
