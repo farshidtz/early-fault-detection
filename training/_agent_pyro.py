@@ -119,6 +119,10 @@ class Agent(object):
 
         return {'prediction': p.item()}
 
+    def echo(self, msg):
+        print("echo: %s"%msg)
+        return "agent.echo: " + msg
+
 # Start Pyro
 Pyro4.config.SERIALIZER = 'pickle'
 daemon = Pyro4.Daemon()
