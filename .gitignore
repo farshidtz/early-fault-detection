@@ -92,3 +92,4 @@ ENV/
 *.jar
 .idea/
 data-processing-agent/.idea/
+*.pkl
