@@ -1,0 +1,48 @@
+{
+	"Name": "python",
+	"Descriptors": [{
+			"Name": "measurements",
+			"Type": "OBJECT"
+		}, {
+			"Name": "type",
+			"Type": "OBJECT"
+		}, {
+			"Name": "id",
+			"Type": "OBJECT"
+		}, {
+			"Name": "label",
+			"Type": "NOMINAL_CLASSES",
+			"isTarget": true,
+			"Classes": ["true", "false"]
+		}
+	],
+	"Model": {
+		"Name": "ExternPythonPyro",
+		"Targets": [{
+				"Name": "MatthewsCorrelationCoefficient",
+				"Threshold": 0.8
+			}, {
+				"Name": "InitialSamples",
+				"Threshold": 10
+			}, {
+				"Name": "SlideAfter",
+				"Threshold": 100
+			}
+		],
+		"Parameters": {
+			"agentScript": "C:\\Users\\Farshid\\Desktop\\thesis\\early-fault-detection\\training\\_agent_pyro.py"
+			"classifier": {
+				"name": "random_forest",
+				"conf": {},
+				"dir": "tmp"
+			},
+			"trainingFiles": ["ABU1.txt"]
+		}
+	},
+	"AuxiliaryStreams": [
+	],
+	"LearningStreams": [{
+			"statement": "select entries.countOf() as total, begin.last.sv as type, begin.bn as id, new{bn=begin.bn, e=entries.selectFrom(i=>new{n=i.last.n, v=i.last.v, u=i.last.u, t=i.bt})} as measurements, String.valueOf(fin.last.bv) as label from pattern[ every ((begin=SenML(last.n='Source/ProdType')) -> (entries=SenML(begin.bn=bn)) until (fin=SenML(last.n='FunctionTest/Quality_OK' and begin.bn=bn)))] "
+		}
+	]
+}
