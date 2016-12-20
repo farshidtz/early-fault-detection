@@ -63,17 +63,17 @@ def track_loss(json_obj):
 		logging.warning("Missing message. Expected: {}, Received: {}".format(tracker+1, index))
 	# update tracker
 	tracker = index
-	
+
 # handle json object
 def handle(json_obj):
-	track_loss(json_obj)
-	mqtt.publish(json_obj)
+	#track_loss(json_obj)
+	mqtt.publishSENML(json_obj, qos=0)
 	#print(json_obj)
 
 
 buffer = ''
 while True:
-	data = s.recv(2048)	
+	data = s.recv(2048)
 	if data:
 		data, _ = split_packet(data)
 		if data[0] != '':
