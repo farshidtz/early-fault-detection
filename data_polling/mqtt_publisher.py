@@ -13,7 +13,6 @@ class MQTTPublisher:
 		self.mqttc.loop()
 
 	# de-serialize and publish senml object with 'bn' as topic
-	def publishSENML(self, json_obj, qos=0):
-		senml = json_obj[json_obj.keys()[0]]
+	def publishSENML(self, senml, qos=0):
 		self.mqttc.publish(senml['bn'], json.dumps(senml, separators=(',', ':')), qos=qos)
 		self.mqttc.loop()

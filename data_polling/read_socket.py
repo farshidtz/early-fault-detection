@@ -1,6 +1,14 @@
 """
 Read production-line JSON data stream from socket and forward it to MQTTPublisher
 """
+
+# CONFIG
+SOCKET_HOST = '193.225.89.35'
+SOCKET_PORT = 5501
+MQTT_BROKER_HOST = "almanac-scral1"
+MQTT_BROKER_PORT = 1883
+MQTT_CLIENTID = "socket_forwarder"
+
 import socket
 import re
 import json
@@ -8,19 +16,13 @@ import paho.mqtt.client as mqtt
 import logging
 from mqtt_publisher import MQTTPublisher
 
-logging.basicConfig(filename='read_socket.log',level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.basicConfig(filename='.read_socket.log',level=logging.DEBUG, format='%(asctime)s %(message)s')
 
-# SOCKET
-HOST = '193.225.89.35'
-PORT = 5501
+# Setup socket
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((HOST, PORT))
-
-# MQTT
-BROKER_HOST = "almanac-broker"
-BROKER_PORT = 1883
-CLIENT_ID = "socket_forwarder"
-mqtt = MQTTPublisher(CLIENT_ID, BROKER_HOST, BROKER_PORT)
+s.connect((SOCKET_HOST, SOCKET_PORT))
+# Setup MQTT client
+mqtt = MQTTPublisher(MQTT_CLIENTID, MQTT_BROKER_HOST, MQTT_BROKER_PORT)
 
 # split packet into json strings
 def split_packet(data):
@@ -67,7 +69,8 @@ def track_loss(json_obj):
 # handle json object
 def handle(json_obj):
 	#track_loss(json_obj)
-	mqtt.publishSENML(json_obj, qos=0)
+	# json_obj[json_obj.keys()[0] is the value of first key {"counter" : <senml>}
+	mqtt.publishSENML(json_obj[json_obj.keys()[0]], qos=0)
 	#print(json_obj)
 
 
