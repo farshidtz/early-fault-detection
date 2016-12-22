@@ -30,19 +30,29 @@
 			}
 		],
 		"Parameters": {
-			"agentScript": "C:\\Users\\Farshid\\Desktop\\thesis\\early-fault-detection\\training\\_agent_pyro.py"
+			"backend": {
+				"script": "C:\\Users\\Farshid\\Desktop\\thesis\\early-fault-detection\\training\\agent\\agent.py",
+				"class": "Agent"
+			},
 			"classifier": {
 				"name": "random_forest",
-				"conf": {},
-				"dir": "tmp"
-			},
-			"trainingFiles": ["ABU1.txt"]
+				"conf": {
+					"n_estimators": 100,
+					"class_weight": {
+						"true": 1.0,
+						"false": 0.05
+					},
+					"max_depth": 90,
+					"n_jobs": 4
+				},
+				"dir": "C:\\Users\\Farshid\\Desktop\\thesis\\early-fault-detection\\training\\agent\\tmp"
+			}
 		}
 	},
 	"AuxiliaryStreams": [
 	],
 	"LearningStreams": [{
-			"statement": "select entries.countOf() as total, begin.last.sv as type, begin.bn as id, new{bn=begin.bn, e=entries.selectFrom(i=>new{n=i.last.n, v=i.last.v, u=i.last.u, t=i.bt})} as measurements, String.valueOf(fin.last.bv) as label from pattern[ every ((begin=SenML(last.n='Source/ProdType')) -> (entries=SenML(begin.bn=bn)) until (fin=SenML(last.n='FunctionTest/Quality_OK' and begin.bn=bn)))] "
+			"statement": "select begin.last.sv as type, begin.bn as id, entries.selectFrom(i=>new{n=i.last.n, v=i.last.v, u=i.last.u, t=i.bt}) as measurements, String.valueOf(fin.last.bv) as label from pattern[ every begin=SenML(last.n='Source/ProdType') -> entries=SenML(begin.bn=bn) until fin=SenML(last.n='FunctionTest/Quality_OK' and begin.bn=bn)] "
 		}
 	]
 }
