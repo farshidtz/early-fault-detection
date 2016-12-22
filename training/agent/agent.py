@@ -1,7 +1,7 @@
 """
 Training / Prediction Agent
 """
-import Pyro4
+
 import numpy as np
 import random
 import matplotlib.pyplot as plt
@@ -16,29 +16,37 @@ import _models
 
 class Agent(object):
 
-    @Pyro4.oneway
     def build(self, classifier):
-        print("build: %s" % classifier)
+        print("agent.build: %s" % classifier)
         self.clf_name = classifier["name"]
         self.clf_conf = classifier["conf"]
         self.model_dir = ""
         if "dir" in classifier:
             self.model_dir = classifier["dir"]
+            if path.isfile(self.model_dir+'/model.pkl'):
+                self.clf = joblib.load(self.model_dir+'/model.pkl')
+                self.means = joblib.load(self.model_dir+'/means.pkl')
+                print("Loaded pre-trained model from disk.")
+                return
+
+        # construct the classifier
+        self.clf = getattr(_models, self.clf_name)(self.clf_conf)
+        print("Built a new %s classifier" % self.clf_name)
+
+        self.pre_train(["C:/Users/Farshid/Desktop/thesis/early-fault-detection/training/agent/ABU1.txt"])
+
         self.corrects = 0
         self.wrongs = 0
+        # return self.clf
 
-    @Pyro4.oneway
     def pre_train(self, training_files):
-        print("pre_train: %s" % training_files)
-        if self.model_dir != "" and path.isfile(self.model_dir+'/model.pkl'):
-            self.clf = joblib.load(self.model_dir+'/model.pkl')
-            self.means = joblib.load(self.model_dir+'/means.pkl')
-            print("Loaded pre-trained model from disk.")
-            return
-
+        print("agent.pre_train: %s" % training_files)
         data = []
         bad = 0
         for filename in training_files:
+            if not path.exists(filename):
+                print("File does not exist: %s" % filename)
+                continue
             print("Loading rows... {}".format(filename))
             with open(filename) as f:
                 for line in f:
@@ -85,23 +93,21 @@ class Agent(object):
         test_labels = np.array(test[:,-1]=='False').astype(np.int32)
 
         """ train model """
-        # dynamically call the model
-        clf = getattr(_models, self.clf_name)(self.clf_conf)
-        clf = clf.fit(train_data, train_labels)
-        print_metrics(train_labels, clf.predict(train_data))
-        print_metrics(test_labels, clf.predict(test_data))
-        self.clf = clf
+        self.clf = self.clf.fit(train_data, train_labels)
+        print_metrics(train_labels, self.clf.predict(train_data))
+        print_metrics(test_labels, self.clf.predict(test_data))
+
         # save model to disk
-        joblib.dump(clf, trained_model_dir+'/model.pkl')
+        joblib.dump(self.clf, self.model_dir+'/model.pkl')
 
-    @Pyro4.oneway
     def learn(self, datapoint):
-        print("learn: %s" % datapoint)
+        # print("agent.learn: %s" % datapoint)
+        return
 
-    @Pyro4.expose
     def predict(self, datapoint):
-        print("predict: %s" % datapoint)
+        print("agent.predict: %s" % datapoint)
         return 1
+
         features = SensorThings2Dict(datapoint, complete=False)
         features = np.array(features.values())
         # convert measurements to numpy array
@@ -126,16 +132,12 @@ class Agent(object):
 
         return {'prediction': p.item()}
 
-    @Pyro4.expose
-    def echo(self, msg):
-        #print("echo: %s"%msg)
-        return msg
+    def batchLearn(self, datapoints):
+        # print("agent.learn: %s" % datapoint)
+        return
 
-# Start Pyro
-Pyro4.config.SERIALIZER = 'pickle'
-daemon = Pyro4.Daemon()
-ns = Pyro4.locateNS()
-uri = daemon.register(Agent)
-ns.register("python-learning-agent", uri)
-print(uri)
-daemon.requestLoop()
+    def batchPredict(self, datapoints):
+        return np.ones(len(datapoints)).astype(int).tolist()
+
+    def destroy(self):
+        print("agent.learn")

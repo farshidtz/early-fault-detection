@@ -22,17 +22,15 @@
 				"Name": "MatthewsCorrelationCoefficient",
 				"Threshold": 0.8
 			}, {
-				"Name": "InitialSamples",
-				"Threshold": 10
-			}, {
 				"Name": "SlideAfter",
 				"Threshold": 100
 			}
 		],
 		"Parameters": {
+			"RetrainEvery": 10,
 			"backend": {
-				"script": "C:\\Users\\Farshid\\Desktop\\thesis\\early-fault-detection\\training\\agent\\agent.py",
-				"class": "Agent"
+				"name": "Agent",
+				"script": "C:\\Users\\Farshid\\Desktop\\thesis\\early-fault-detection\\training\\agent\\agent.py"
 			},
 			"classifier": {
 				"name": "random_forest",
@@ -49,10 +47,19 @@
 			}
 		}
 	},
-	"AuxiliaryStreams": [
+	"AuxiliaryStreams": [{
+			"statement": "insert into buffer select begin.last.sv as type, begin.bn as id, entries.selectFrom(i=>new{n=i.last.n, v=i.last.v, u=i.last.u, t=i.bt}) as measurements, String.valueOf(fin.last.bv) as label from pattern[ every begin=SenML(last.n='Source/ProdType') -> entries=SenML(begin.bn=bn) until fin=SenML(last.n='FunctionTest/Quality_OK' and begin.bn=bn)] "
+		}
 	],
 	"LearningStreams": [{
 			"statement": "select begin.last.sv as type, begin.bn as id, entries.selectFrom(i=>new{n=i.last.n, v=i.last.v, u=i.last.u, t=i.bt}) as measurements, String.valueOf(fin.last.bv) as label from pattern[ every begin=SenML(last.n='Source/ProdType') -> entries=SenML(begin.bn=bn) until fin=SenML(last.n='FunctionTest/Quality_OK' and begin.bn=bn)] "
 		}
-	]
+	],
+	"DeploymentStreams": [{
+			"statement": "select <id>.predict(*) from buffer"
+		}
+	],
+	"Settings": {
+		"AlwaysDeploy": true
+	}
 }
