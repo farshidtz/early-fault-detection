@@ -1,3 +1,8 @@
+"""
+MQTT Controller
+A high level MQTT client built on top of paho.mqtt.client
+"""
+
 import paho.mqtt.client as mqtt
 import json
 import logging

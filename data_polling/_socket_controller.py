@@ -1,6 +1,8 @@
 """
-Read and parse JSON data stream from a socket
+Socket Controller Module
 Tweaked for Siemens Plant Simulation 13
+- Read and parse JSON data stream from a socket
+- Write messages to a socket
 """
 
 import socket
