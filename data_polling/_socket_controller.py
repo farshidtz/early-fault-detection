@@ -12,7 +12,7 @@ import logging
 import time
 import threading
 
-logging_formatter = logging.Formatter('%(asctime)s [%(levelname)s] [%(name)s] %(message)s')
+logging_formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s:\t %(message)s')
 h = logging.StreamHandler()
 h.setLevel(logging.INFO)
 h.setFormatter(logging_formatter)

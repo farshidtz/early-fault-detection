@@ -41,9 +41,8 @@ sock_reader.start(incomingHandler)
 while True:
     try:
         time.sleep(.3)
-        pass
     except KeyboardInterrupt:
-        print "Interrupted."
+        print "\nInterrupted."
         sock_reader.stop()
         subscriber.stop()
         sys.exit()
