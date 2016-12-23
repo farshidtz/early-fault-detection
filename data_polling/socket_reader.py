@@ -1,106 +1,129 @@
 """
-Read production-line JSON data stream from socket and publish each json separately to a mqtt broker
+Read and parse JSON data stream from a socket
+Tweaked for Siemens Plant Simulation 13
 """
-
-# CONFIG
-SOCKET_HOST = '193.225.89.35'
-SOCKET_PORT = 5501
-MQTT_BROKER_HOST = "almanac-broker"
-MQTT_BROKER_PORT = 1883
-MQTT_CLIENTID_PREFIX = "socket_forwarder_"
 
 import socket
 import re
 import json
 import logging
 import time
-import sys
-from mqtt_controller import MQTTPublisher
+import threading
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
+logging_formatter = logging.Formatter('%(asctime)s [%(levelname)s] [%(name)s] %(message)s')
+h = logging.StreamHandler()
+h.setLevel(logging.INFO)
+h.setFormatter(logging_formatter)
 
-# Setup MQTT client
-mqtt = MQTTPublisher(MQTT_BROKER_HOST, MQTT_BROKER_PORT, MQTT_CLIENTID_PREFIX+str(time.time()))
+class SocketReader:
 
-# split packet into json strings
-def split_packet(data):
-    s = re.split(r'>SOM[0-9A-Z]+<', data)
-    # trim "\x00" suffix after each json
-    for i, msg in enumerate(s):
-        s[i] = re.sub('\x00$', '', msg)
-    return s, len(s)>1
+	def __init__(self, host, port):
+		self.host = host
+		self.port = port
+		self.run_event = threading.Event()
+		self.logger = logging.getLogger('SocketReader')
+		self.logger.setLevel(logging.INFO)
+		self.logger.addHandler(h)
 
-# iterate through splitted messages, return (if any) partial data
-def iterator(data):
-    for msg in data:
-        json_obj, ok = parse_json(msg)
-        if ok:
-            handle(json_obj)
-        else:
-            # partial json string in the end of message
-            return msg
-    return ''
+	# split packet into json strings
+	def split_packet(self, data):
+		s = re.split(r'>SOM[0-9A-Z]+<', data)
+		# trim "\x00" suffix after each json
+		for i, msg in enumerate(s):
+			s[i] = re.sub('\x00$', '', msg)
+		return s, len(s)>1
 
-# parse and validate json
-def parse_json(myjson):
-    try:
-        json_object = json.loads(myjson)
-    except ValueError, e:
-        return None, False
-    return json_object, True
+	# iterate through splitted messages, return (if any) partial data
+	def iterator(self, data, handler):
+		for msg in data:
+			json_obj, ok = self.parse_json(msg)
+			if ok:
+				handler(json_obj)
+			else:
+				# partial json string in the end of message
+				return msg
+		return ''
 
-# log lost messages
-tracker = -1
-def track_loss(json_obj):
-    index = int(json_obj.keys()[0])
-    global tracker
-    # init tracker
-    if tracker == -1:
-        tracker = index-1
+	# parse and validate json
+	def parse_json(self, myjson):
+		try:
+			json_object = json.loads(myjson)
+		except ValueError, e:
+			return None, False
+		return json_object, True
 
-    if tracker+1 != index:
-        logging.warning("Missing message. Expected: {}, Received: {}".format(tracker+1, index))
-    # update tracker
-    tracker = index
+	# log lost messages
+	tracker = -1
+	def track_loss(self, json_obj):
+		index = int(json_obj.keys()[0])
+		# init tracker
+		if self.tracker == -1:
+			self.tracker = index-1
 
-# handle json object
-def handle(json_obj):
-    #track_loss(json_obj)
-    # json_obj[json_obj.keys()[0] is the value of first key {"counter" : <senml>}
-    mqtt.publishSENML(json_obj[json_obj.keys()[0]], qos=0)
-    # print(json_obj)
-    sys.stdout.flush()
+		if self.tracker+1 != index:
+			logging.warning("Missing message. Expected: {}, Received: {}".format(self.tracker+1, index))
+		# update tracker
+		self.tracker = index
 
+	def socketConnect(self):
+		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self.sock.connect((self.host, self.port))
 
-def socketConnect():
-    global sock
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((SOCKET_HOST, SOCKET_PORT))
-socketConnect()
+	def worker(self, handler):
+		buffer = ''
+		while self.run_event.is_set():
+			data = self.sock.recv(2048)
+			if data:
+				data, _ = self.split_packet(data)
+				if data[0] != '':
+					msg = buffer+data[0]
+					split, multiple = self.split_packet(msg)
+					if multiple:
+						self.iterator(split, handler)
+					else:
+						buffer = ''
+						json_obj, ok = self.parse_json(msg)
+						if ok:
+							#self.track_loss(json_obj)
+							# json_obj[json_obj.keys()[0] is the value of first key {"counter" : <senml>}
+							#
+							# logging.info(json_obj)
+							handler(json_obj)
+						else:
+							logging.debug("Bad data: " + msg)
 
-buffer = ''
-while True:
-    data = sock.recv(2048)
-    if data:
-        data, _ = split_packet(data)
-        if data[0] != '':
-            msg = buffer+data[0]
-            split, multiple = split_packet(msg)
-            if multiple:
-                iterator(split)
-            else:
-                buffer = ''
-                json_obj, ok = parse_json(msg)
-                if ok:
-                    handle(json_obj)
-                else:
-                    logging.debug("Bad data: " + msg)
+				buffer = self.iterator(data[1:], handler)
+				#print ""
 
-        buffer = iterator(data[1:])
-        #print ""
+			else:
+				logging.debug("Socket disconnected.")
+				self.socketConnect()
 
-    else:
-        logging.debug("Socket disconnected.")
-        socketConnect()
+	def start(self, handler):
+		self.socketConnect()
+		self.run_event.set()
+		self.t = threading.Thread(target=self.worker, args=(handler,))
+		self.t.start()
+		self.logger.info("Started.")
 
-s.close()
+	def stop(self):
+		self.run_event.clear()
+		self.sock.close()
+		self.logger.info("Stopped.")
+
+class SocketWriter:
+	def __init__(self, host, port):
+		self.host = host
+		self.port = port
+		self.logger = logging.getLogger('SocketWriter')
+		self.logger.setLevel(logging.INFO)
+		self.logger.addHandler(h)
+
+	def send(self, message):
+		self.logger.info("Sending %s" % message)
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		sock.connect((self.host, self.port))
+		try:
+		    sock.sendall(json.dumps(message))
+		finally:
+		    sock.close()
