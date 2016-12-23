@@ -4,8 +4,8 @@ Socket <-> MQTT
 """
 import sys
 import time
-from socket_reader import SocketReader, SocketWriter
-from mqtt_controller import MQTTPublisher, MQTTSubscriber
+from _socket_reader import SocketReader, SocketWriter
+from _mqtt_controller import MQTTPublisher, MQTTSubscriber
 
 # CONFIG
 SOCKET_HOST = '193.225.89.35'
@@ -29,8 +29,6 @@ subscriber.subscribe(MQTT_SUBSCRIBE_TOPIC, outgoingHandler, qos=0)
 
 
 def incomingHandler(json_obj):
-    # global mqtt
-    # print(json_obj)
     publisher.publishSENML(json_obj[json_obj.keys()[0]], qos=0)
     sys.stdout.flush()
 
