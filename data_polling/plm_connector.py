@@ -1,10 +1,11 @@
+#!/usr/bin/env python
 """
 Connector for Siemens Product lifecycle management (PLM)
 Socket <-> MQTT
 """
 import sys
 import time
-from _socket_reader import SocketReader, SocketWriter
+from _socket_controller import SocketReader, SocketWriter
 from _mqtt_controller import MQTTPublisher, MQTTSubscriber
 
 # CONFIG
