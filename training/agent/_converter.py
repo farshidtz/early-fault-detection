@@ -67,6 +67,33 @@ def reduce_measurements(name):
         return "PtAssembly2or3/Pt2or3"
     return name
 
+# converts the result of the following query to python OrderedDict
+# Query:
+# select
+#   begin.last.sv as type,
+#   begin.bn as id,
+#   entries.selectFrom(i=>new{n=i.last.n, v=i.last.v, u=i.last.u, t=i.bt}) as measurements,
+#   String.valueOf(fin.last.bv) as label
+# from pattern[ every begin=SenML(last.n='Source/ProdType') -> entries=SenML(begin.bn=bn) until fin=SenML(last.n='FunctionTest/Quality_OK' and begin.bn=bn)]
+def Event2Dict(j, complete=True):
+    features = copy.deepcopy(Features)
+    total = len(j['measurements'])
+    if complete and total != 51:
+        raise Exception("Total not 51.")
+
+    measurements = j['measurements']
+    features["Id"] = j['id']
+    features["Type"] = j['type']
+
+    if 'label' in j:
+        features["Label"] = j['label']
+
+    for entry in measurements:
+        feature_name = reduce_measurements(entry['n'])
+        features[feature_name] = entry['v']
+
+    return features
+
 
 # converts ResultValue of json OGC-SensorThings to python OrderedDict
 def SensorThings2Dict(j, complete=True):

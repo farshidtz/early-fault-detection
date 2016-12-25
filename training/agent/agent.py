@@ -9,7 +9,7 @@ import json
 import time
 from sklearn.externals import joblib
 from os import path
-from _converter import SensorThings2Dict
+from _converter import SensorThings2Dict, Event2Dict
 from _evaluation import print_metrics
 import _models
 
@@ -101,14 +101,14 @@ class Agent(object):
         joblib.dump(self.clf, self.model_dir+'/model.pkl')
 
     def learn(self, datapoint):
-        # print("agent.learn: %s" % datapoint)
-        return
+        print("agent.learn: %s" % "datapoint")
+        raise NotImplementedError
 
     def predict(self, datapoint):
-        print("agent.predict: %s" % datapoint)
-        return 1
+        print("agent.predict: %s" % "datapoint")
+        # return 1
 
-        features = SensorThings2Dict(datapoint, complete=False)
+        features = Event2Dict(datapoint, complete=False)
         features = np.array(features.values())
         # convert measurements to numpy array
         r = features[2:-1].astype(np.float32)
@@ -118,26 +118,46 @@ class Agent(object):
         start_time = time.time()
         p = self.clf.predict(r.reshape(1, -1))[0]
         elapsed_time = time.time() - start_time
-        #print("Prediction: {} in {}s".format(p, elapsed_time))
+        print("Prediction: {} in {}s".format(p, elapsed_time))
 
-        # functional test is done
-        if features[-1] != None:
-            label = np.array(features[-1]=='False').astype(np.int)
-            if label != p:
-                self.wrongs += 1
-                print("WRONG PREDICTION. Predicted {} Label was {} -- {} / {}".format(p, label, self.wrongs, self.corrects))
-            else:
-                self.corrects += 1
-                print("CORRECT -- {} / {}".format(self.corrects, self.corrects+self.wrongs))
+        # # functional test is done
+        # if features[-1] != None:
+        #     label = np.array(features[-1]=='False').astype(np.int)
+        #     if label != p:
+        #         self.wrongs += 1
+        #         print("WRONG PREDICTION. Predicted {} Label was {} -- {} / {}".format(p, label, self.wrongs, self.corrects))
+        #     else:
+        #         self.corrects += 1
+        #         print("CORRECT -- {} / {}".format(self.corrects, self.corrects+self.wrongs))
 
-        return {'prediction': p.item()}
+        return p.item()
 
     def batchLearn(self, datapoints):
-        # print("agent.learn: %s" % datapoint)
-        return
+        print("agent.batchLearn: %s" % "datapoints")
+        # data = []
+        # for datapoint in datapoints:
+        #     features = Event2Dict(datapoint)
+        #     data.append(list(features.values()))
+
 
     def batchPredict(self, datapoints):
-        return np.ones(len(datapoints)).astype(int).tolist()
+        print("agent.batchPredict: %s" % "json.dumps(datapoints)")
+        # return np.ones(len(datapoints)).astype(int).tolist()
+
+        data = []
+        for datapoint in datapoints:
+            features = Event2Dict(datapoint)
+            features = np.asarray(features.values())
+            features = features[2:-1].astype(np.float32)
+            data.append(features)
+
+        data = np.asarray(data)
+        start_time = time.time()
+        predictions = self.clf.predict(data)
+        elapsed_time = time.time() - start_time
+        print("Batch Prediction in {}s".format(elapsed_time))
+        return predictions.tolist()
+
 
     def destroy(self):
-        print("agent.learn")
+        print("agent.destroy")
