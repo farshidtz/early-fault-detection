@@ -4,15 +4,23 @@ Training / Prediction Agent
 
 import numpy as np
 import random
-import matplotlib.pyplot as plt
 import json
 import time
+from scipy.stats import logistic
+from collections import deque
 from sklearn.externals import joblib
 from os import path
 from _converter import SensorThings2Dict, Event2Dict
 from _evaluation import print_metrics
 import _models
 
+"""
+Quality_OK is mapped to Faultiness
+    'False' -> 1 (Faulty)
+    'True'  -> 0 (Good)
+"""
+_false = "false"
+_true = "true"
 
 class Agent(object):
 
@@ -21,6 +29,9 @@ class Agent(object):
         self.clf_name = classifier["name"]
         self.clf_conf = classifier["conf"]
         self.model_dir = ""
+        self.corrects = 0
+        self.wrongs = 0
+        self.data = deque([], maxlen=20000)
         if "dir" in classifier:
             self.model_dir = classifier["dir"]
             if path.isfile(self.model_dir+'/model.pkl'):
@@ -34,9 +45,6 @@ class Agent(object):
         print("Built a new %s classifier" % self.clf_name)
 
         self.pre_train(["C:/Users/Farshid/Desktop/thesis/early-fault-detection/training/agent/ABU1.txt"])
-
-        self.corrects = 0
-        self.wrongs = 0
         # return self.clf
 
     def pre_train(self, training_files):
@@ -84,11 +92,7 @@ class Agent(object):
 
         train_data = train[:,2:-1].astype(np.float32)
         test_data = test[:,2:-1].astype(np.float32)
-        """
-        Quality_OK is mapped to Faultiness
-            'False' -> 1 (Faulty)
-            'True'  -> 0 (Good)
-        """
+
         train_labels = np.array(train[:,-1]=='False').astype(np.int32)
         test_labels = np.array(test[:,-1]=='False').astype(np.int32)
 
@@ -132,12 +136,49 @@ class Agent(object):
 
         return p.item()
 
+    # Take random numbers from a logistic probability density function
+    def logistic_choice(self, total, sample_size, replace=False):
+        p = logistic.pdf(np.arange(0,total), loc=0, scale=total/5)
+        p /= np.sum(p)
+
+        return np.random.choice(total, size=sample_size, replace=replace, p=p)
+
     def batchLearn(self, datapoints):
-        print("agent.batchLearn: %s" % "datapoints")
-        # data = []
-        # for datapoint in datapoints:
-        #     features = Event2Dict(datapoint)
-        #     data.append(list(features.values()))
+        print("agent.batchLearn: %s" % "json.dumps(datapoints)")
+
+        for datapoint in datapoints:
+            features = Event2Dict(datapoint)
+            # del features['Id']
+            # del features['Type']
+            features = np.asarray(features.values())
+            self.data.append(features)
+
+        train = np.asarray(self.data)
+        # print(train)
+        faulty = train[train[:,-1]==_false]
+        not_faulty = train[train[:,-1]==_true]
+        fr = len(faulty)/float(len(train))
+        print("Train Total: {} Good: {} Faulty: {} Ratio: {}".format(len(train), len(not_faulty), len(faulty), fr))
+        if(len(faulty)==0 or len(not_faulty)==0):
+            print("Waiting for samples from both classes.")
+            return
+
+        sample_size = np.min([5000, len(not_faulty)])
+        samples = self.logistic_choice(len(not_faulty), sample_size)
+        # TODO: Upsample faulties with logistic_choice(replace=True)
+        f_sample_size = np.min([1000, len(faulty)])
+        f_samples = self.logistic_choice(0, f_sample_size)
+        # Put samples together and shuffle
+        train = np.concatenate((not_faulty[samples], faulty[f_samples]))
+        train = np.random.permutation(train)
+
+        faulty = train[train[:,-1]==_false]
+        not_faulty = train[train[:,-1]==_true]
+        fr = len(faulty)/float(len(train))
+        print("Train Total: {} Good: {} Faulty: {} Ratio: {}".format(len(train), len(not_faulty), len(faulty), fr))
+
+        train_data = train[:,2:-1].astype(np.float32)
+        train_labels = np.array(train[:,-1]==_false).astype(np.int32)
 
 
     def batchPredict(self, datapoints):
