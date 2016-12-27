@@ -121,8 +121,7 @@ class Agent(object):
         r[w] = self.means[w]
         start_time = time.time()
         p = self.clf.predict(r.reshape(1, -1))[0]
-        elapsed_time = time.time() - start_time
-        print("Prediction: {} in {}s".format(p, elapsed_time))
+        print("Prediction: {} in {}s".format(p, time.time() - start_time))
 
         # # functional test is done
         # if features[-1] != None:
@@ -138,9 +137,8 @@ class Agent(object):
 
     # Take random numbers from a logistic probability density function
     def logistic_choice(self, total, sample_size, replace=False):
-        p = logistic.pdf(np.arange(0,total), loc=0, scale=total/5)
+        p = logistic.pdf(np.arange(0,total), loc=0, scale=total/5.0)
         p /= np.sum(p)
-
         return np.random.choice(total, size=sample_size, replace=replace, p=p)
 
     def batchLearn(self, datapoints):
@@ -148,8 +146,6 @@ class Agent(object):
 
         for datapoint in datapoints:
             features = Event2Dict(datapoint)
-            # del features['Id']
-            # del features['Type']
             features = np.asarray(features.values())
             self.data.append(features)
 
@@ -167,7 +163,7 @@ class Agent(object):
         samples = self.logistic_choice(len(not_faulty), sample_size)
         # TODO: Upsample faulties with logistic_choice(replace=True)
         f_sample_size = np.min([1000, len(faulty)])
-        f_samples = self.logistic_choice(0, f_sample_size)
+        f_samples = self.logistic_choice(len(faulty), f_sample_size)
         # Put samples together and shuffle
         train = np.concatenate((not_faulty[samples], faulty[f_samples]))
         train = np.random.permutation(train)
@@ -175,10 +171,16 @@ class Agent(object):
         faulty = train[train[:,-1]==_false]
         not_faulty = train[train[:,-1]==_true]
         fr = len(faulty)/float(len(train))
-        print("Train Total: {} Good: {} Faulty: {} Ratio: {}".format(len(train), len(not_faulty), len(faulty), fr))
+        print("Resampled Train Total: {} Good: {} Faulty: {} Ratio: {}".format(len(train), len(not_faulty), len(faulty), fr))
 
         train_data = train[:,2:-1].astype(np.float32)
         train_labels = np.array(train[:,-1]==_false).astype(np.int32)
+
+        """ train model """
+        start_time = time.time()
+        self.clf = self.clf.fit(train_data, train_labels)
+        print("Trained in {}s".format(time.time() - start_time))
+        print_metrics(train_labels, self.clf.predict(train_data))
 
 
     def batchPredict(self, datapoints):
@@ -188,6 +190,7 @@ class Agent(object):
         data = []
         for datapoint in datapoints:
             features = Event2Dict(datapoint)
+            # del features['Id'], features['Type'], features['Label']
             features = np.asarray(features.values())
             features = features[2:-1].astype(np.float32)
             data.append(features)
@@ -195,10 +198,15 @@ class Agent(object):
         data = np.asarray(data)
         start_time = time.time()
         predictions = self.clf.predict(data)
-        elapsed_time = time.time() - start_time
-        print("Batch Prediction in {}s".format(elapsed_time))
+        print("Batch Prediction in {}s".format(time.time() - start_time))
         return predictions.tolist()
 
 
     def destroy(self):
         print("agent.destroy")
+
+    def exportModel(self):
+        raise NotImplementedError
+
+    def importModel(self):
+        raise NotImplementedError
