@@ -26,17 +26,19 @@ class Agent(object):
 
     def build(self, classifier):
         print("agent.build: %s" % classifier)
+        self.fitted = False
         self.clf_name = classifier["name"]
         self.clf_conf = classifier["conf"]
         self.model_dir = ""
-        self.corrects = 0
-        self.wrongs = 0
         self.data = deque([], maxlen=20000)
         if "dir" in classifier:
             self.model_dir = classifier["dir"]
+            # TODO: check all files
             if path.isfile(self.model_dir+'/model.pkl'):
                 self.clf = joblib.load(self.model_dir+'/model.pkl')
                 self.means = joblib.load(self.model_dir+'/means.pkl')
+                self.data = joblib.load(self.model_dir+'/data.pkl')
+                self.fitted = True
                 print("Loaded pre-trained model from disk.")
                 return
 
@@ -44,7 +46,7 @@ class Agent(object):
         self.clf = getattr(_models, self.clf_name)(self.clf_conf)
         print("Built a new %s classifier" % self.clf_name)
 
-        self.pre_train(["C:/Users/Farshid/Desktop/thesis/early-fault-detection/training/agent/ABU1.txt"])
+        # self.pre_train(["C:/Users/Farshid/Desktop/thesis/early-fault-detection/training/agent/ABU1.txt"])
         # return self.clf
 
     def pre_train(self, training_files):
@@ -98,6 +100,7 @@ class Agent(object):
 
         """ train model """
         self.clf = self.clf.fit(train_data, train_labels)
+        self.fitted = True
         print_metrics(train_labels, self.clf.predict(train_data))
         print_metrics(test_labels, self.clf.predict(test_data))
 
@@ -112,6 +115,10 @@ class Agent(object):
         print("agent.predict: %s" % "datapoint")
         # return 1
 
+        if not self.fitted:
+            print("Model not trained.")
+            return 0
+
         features = Event2Dict(datapoint, complete=False)
         features = np.array(features.values())
         # convert measurements to numpy array
@@ -122,17 +129,6 @@ class Agent(object):
         start_time = time.time()
         p = self.clf.predict(r.reshape(1, -1))[0]
         print("Prediction: {} in {}s".format(p, time.time() - start_time))
-
-        # # functional test is done
-        # if features[-1] != None:
-        #     label = np.array(features[-1]=='False').astype(np.int)
-        #     if label != p:
-        #         self.wrongs += 1
-        #         print("WRONG PREDICTION. Predicted {} Label was {} -- {} / {}".format(p, label, self.wrongs, self.corrects))
-        #     else:
-        #         self.corrects += 1
-        #         print("CORRECT -- {} / {}".format(self.corrects, self.corrects+self.wrongs))
-
         return p.item()
 
     # Take random numbers from a logistic probability density function
@@ -153,8 +149,7 @@ class Agent(object):
         # print(train)
         faulty = train[train[:,-1]==_false]
         not_faulty = train[train[:,-1]==_true]
-        fr = len(faulty)/float(len(train))
-        print("Train Total: {} Good: {} Faulty: {} Ratio: {}".format(len(train), len(not_faulty), len(faulty), fr))
+        print("Train Total: {} Good: {} Faulty: {} Ratio: {}".format(len(train), len(not_faulty), len(faulty), len(faulty)/float(len(train))))
         if(len(faulty)==0 or len(not_faulty)==0):
             print("Waiting for samples from both classes.")
             return
@@ -167,11 +162,7 @@ class Agent(object):
         # Put samples together and shuffle
         train = np.concatenate((not_faulty[samples], faulty[f_samples]))
         train = np.random.permutation(train)
-
-        faulty = train[train[:,-1]==_false]
-        not_faulty = train[train[:,-1]==_true]
-        fr = len(faulty)/float(len(train))
-        print("Resampled Train Total: {} Good: {} Faulty: {} Ratio: {}".format(len(train), len(not_faulty), len(faulty), fr))
+        print("Resampled Train Total: {} Good: {} Faulty: {} Ratio: {}".format(len(train), len(samples), len(f_samples), len(f_samples)/float(len(train))))
 
         train_data = train[:,2:-1].astype(np.float32)
         train_labels = np.array(train[:,-1]==_false).astype(np.int32)
@@ -179,17 +170,29 @@ class Agent(object):
         """ train model """
         start_time = time.time()
         self.clf = self.clf.fit(train_data, train_labels)
+        self.fitted = True
         print("Trained in {}s".format(time.time() - start_time))
         print_metrics(train_labels, self.clf.predict(train_data))
 
+        start_time = time.time()
+        # re-calculate means of this sub-sample
+        self.means = np.mean(not_faulty[samples,2:-1].astype(np.float32), axis=0)
+        # save to disk
+        joblib.dump(self.clf, self.model_dir+'/model.pkl')
+        joblib.dump(self.means, self.model_dir+'/means.pkl')
+        joblib.dump(self.data, self.model_dir+'/data.pkl')
+        print("Saved in {}s".format(time.time() - start_time))
 
     def batchPredict(self, datapoints):
         print("agent.batchPredict: %s" % "json.dumps(datapoints)")
-        # return np.ones(len(datapoints)).astype(int).tolist()
+        # return np.zeros(len(datapoints)).astype(int).tolist()
+        if not self.fitted:
+            print("Model not trained.")
+            return np.zeros(len(datapoints)).astype(int).tolist()
 
         data = []
         for datapoint in datapoints:
-            features = Event2Dict(datapoint)
+            features = Event2Dict(datapoint, complete=False)
             # del features['Id'], features['Type'], features['Label']
             features = np.asarray(features.values())
             features = features[2:-1].astype(np.float32)
