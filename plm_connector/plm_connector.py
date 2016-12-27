@@ -15,7 +15,8 @@ SOCKET_FEEDBACK_PORT = 5502
 MQTT_BROKER_HOST = "almanac-broker"
 MQTT_BROKER_PORT = 1883
 MQTT_CLIENTID_PREFIX = "plm_connector_"
-MQTT_SUBSCRIBE_TOPIC = "/outgoing/#"
+MQTT_SUBSCRIBE_TOPIC = "/outgoing/DS[1]:EarlyDetector/+"
+# MQTT_SUBSCRIBE_TOPIC = "ceml/output/EarlyDetector"
 
 # Setup sockets
 sock_reader = SocketReader(SOCKET_HOST, SOCKET_DATA_PORT)
@@ -26,7 +27,10 @@ subscriber = MQTTSubscriber(MQTT_BROKER_HOST, MQTT_BROKER_PORT, MQTT_CLIENTID_PR
 
 
 def outgoingHandler(json_obj):
-    sock_writer.send(json_obj)
+    result = json_obj['ResultValue']
+    # print("ConfusionMatrix: {}, MCC: {}".format(result['evaluationMetrics'][0]['confusionMatrix'], result['evaluationMetrics'][0]['result']))
+    if result['prediction']==1:
+        sock_writer.send(result['originalInput']['id'])
 
 def incomingHandler(json_obj):
     publisher.publishSENML(json_obj[json_obj.keys()[0]], qos=0)
