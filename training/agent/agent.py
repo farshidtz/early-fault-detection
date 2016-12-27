@@ -29,18 +29,18 @@ class Agent(object):
         self.fitted = False
         self.clf_name = classifier["name"]
         self.clf_conf = classifier["conf"]
-        self.model_dir = ""
+        self.model_dir = classifier["dir"]
         self.data = deque([], maxlen=20000)
-        if "dir" in classifier:
-            self.model_dir = classifier["dir"]
-            # TODO: check all files
-            if path.isfile(self.model_dir+'/model.pkl'):
-                self.clf = joblib.load(self.model_dir+'/model.pkl')
-                self.means = joblib.load(self.model_dir+'/means.pkl')
-                self.data = joblib.load(self.model_dir+'/data.pkl')
-                self.fitted = True
-                print("Loaded pre-trained model from disk.")
-                return
+
+        if path.isfile(self.path('model.pkl')) and \
+            path.isfile(self.path('means.pkl')) and \
+            path.isfile(self.path('data.pkl')):
+            self.clf = joblib.load(self.path('model.pkl'))
+            self.means = joblib.load(self.path('means.pkl'))
+            self.data = joblib.load(self.path('data.pkl'))
+            self.fitted = True
+            print("Loaded pre-trained model from disk.")
+            return
 
         # construct the classifier
         self.clf = getattr(_models, self.clf_name)(self.clf_conf)
@@ -84,8 +84,6 @@ class Agent(object):
         not_faulty = train[train[:,-1]=='True']
 
         self.means = np.mean(not_faulty[:,2:-1].astype(np.float32), axis=0)
-        # save means to disk
-        joblib.dump(self.means, self.model_dir+'/means.pkl')
 
         """ down/up sample data """
         samples = np.random.choice(len(not_faulty), 5000, replace=False)
@@ -104,8 +102,9 @@ class Agent(object):
         print_metrics(train_labels, self.clf.predict(train_data))
         print_metrics(test_labels, self.clf.predict(test_data))
 
-        # save model to disk
-        joblib.dump(self.clf, self.model_dir+'/model.pkl')
+        # save to disk
+        joblib.dump(self.means, self.path('/means.pkl'))
+        joblib.dump(self.clf, self.path('model.pkl'))
 
     def learn(self, datapoint):
         print("agent.learn: %s" % "datapoint")
@@ -178,9 +177,9 @@ class Agent(object):
         # re-calculate means of this sub-sample
         self.means = np.mean(not_faulty[samples,2:-1].astype(np.float32), axis=0)
         # save to disk
-        joblib.dump(self.clf, self.model_dir+'/model.pkl')
-        joblib.dump(self.means, self.model_dir+'/means.pkl')
-        joblib.dump(self.data, self.model_dir+'/data.pkl')
+        joblib.dump(self.clf, self.path('model.pkl'))
+        joblib.dump(self.means, self.path('means.pkl'))
+        joblib.dump(self.data, self.path('data.pkl'))
         print("Saved in {}s".format(time.time() - start_time))
 
     def batchPredict(self, datapoints):
@@ -213,3 +212,8 @@ class Agent(object):
 
     def importModel(self):
         raise NotImplementedError
+
+    """ UTILITY FUNCTIONS """
+    # returns the filename appended to the model path
+    def path(self, filename):
+        return path.join(self.model_dir, filename)
