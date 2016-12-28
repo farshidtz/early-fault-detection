@@ -14,8 +14,8 @@ import threading
 
 logging_formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s:\t %(message)s')
 h = logging.StreamHandler()
-h.setLevel(logging.INFO)
 h.setFormatter(logging_formatter)
+loggingLevel = logging.DEBUG
 
 class SocketReader:
 
@@ -23,8 +23,8 @@ class SocketReader:
 		self.host = host
 		self.port = port
 		self.run_event = threading.Event()
-		self.logger = logging.getLogger('SocketReader')
-		self.logger.setLevel(logging.INFO)
+		self.logger = logging.getLogger(__name__)
+		self.logger.setLevel(loggingLevel)
 		self.logger.addHandler(h)
 
 	# split packet into json strings
@@ -117,12 +117,12 @@ class SocketWriter:
 	def __init__(self, host, port):
 		self.host = host
 		self.port = port
-		self.logger = logging.getLogger('SocketWriter')
-		self.logger.setLevel(logging.INFO)
+		self.logger = logging.getLogger(__name__)
+		self.logger.setLevel(loggingLevel)
 		self.logger.addHandler(h)
 
 	def send(self, message):
-		self.logger.info("Sending %s" % message)
+		self.logger.debug("Sending %s" % message)
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		sock.connect((self.host, self.port))
 		try:

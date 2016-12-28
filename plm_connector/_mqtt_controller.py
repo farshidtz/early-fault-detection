@@ -9,16 +9,16 @@ import logging
 
 logging_formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s:\t %(message)s')
 h = logging.StreamHandler()
-h.setLevel(logging.INFO)
 h.setFormatter(logging_formatter)
+loggingLevel = logging.DEBUG
 
 class MQTTPublisher:
 
 	def __init__(self, host, port, client_id=None):
 		self.client = mqtt.Client(client_id)
 		self.client.connect(host, port)
-		self.logger = logging.getLogger('MQTTPublisher')
-		self.logger.setLevel(logging.INFO)
+		self.logger = logging.getLogger(__name__)
+		self.logger.setLevel(loggingLevel)
 		self.logger.addHandler(h)
 
 	# de-serialize and publish json
@@ -38,8 +38,8 @@ class MQTTSubscriber:
 		self.port = port
 		self.client = mqtt.Client(client_id)
 
-		self.logger = logging.getLogger('MQTTSubscriber')
-		self.logger.setLevel(logging.INFO)
+		self.logger = logging.getLogger(__name__)
+		self.logger.setLevel(loggingLevel)
 		self.logger.addHandler(h)
 
 	def subscribe(self, topic, handler, qos=0):
