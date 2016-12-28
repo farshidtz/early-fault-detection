@@ -26,10 +26,8 @@ class Agent(object):
 
     def build(self, classifier):
         print("agent.build: %s" % classifier)
+        self.loadParameters(classifier)
         self.fitted = False
-        self.clf_name = classifier["name"]
-        self.clf_conf = classifier["conf"]
-        self.model_dir = classifier["dir"]
         self.data = deque([], maxlen=20000)
 
         if path.isfile(self.path('model.pkl')) and \
@@ -209,11 +207,23 @@ class Agent(object):
 
     def exportModel(self):
         raise NotImplementedError
+        # Zip tmp directory and return binaries?
+        # http://stackoverflow.com/questions/1855095/how-to-create-a-zip-archive-of-a-directory
+        # pmml: https://github.com/alex-pirozhenko/sklearn-pmml
 
     def importModel(self):
         raise NotImplementedError
 
     """ UTILITY FUNCTIONS """
+    def loadParameters(self, classifier):
+        try:
+            self.clf_name = classifier["name"]
+            self.clf_conf = classifier["conf"]
+            self.model_dir = classifier["dir"]
+            # self.cache_size = classifier['cache_size']
+        except KeyError as e:
+            raise KeyError("Attribute `%s` is not set in the classifier object." % e.message)
+
     # returns the filename appended to the model path
     def path(self, filename):
         return path.join(self.model_dir, filename)
