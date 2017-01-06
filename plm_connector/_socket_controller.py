@@ -63,7 +63,7 @@ class SocketReader:
 			self.tracker = index-1
 
 		if self.tracker+1 != index:
-			logging.warning("Missing message. Expected: {}, Received: {}".format(self.tracker+1, index))
+			self.logger.warning("Missing message. Expected: {}, Received: {}".format(self.tracker+1, index))
 		# update tracker
 		self.tracker = index
 
@@ -89,16 +89,16 @@ class SocketReader:
 							#self.track_loss(json_obj)
 							# json_obj[json_obj.keys()[0] is the value of first key {"counter" : <senml>}
 							#
-							# logging.info(json_obj)
+							# self.logger.info(json_obj)
 							handler(json_obj)
 						else:
-							logging.debug("Bad data: " + msg)
+							self.logger.debug("Bad data: " + msg)
 
 				buffer = self.iterator(data[1:], handler)
 				#print ""
 
 			else:
-				logging.debug("Socket disconnected.")
+				self.logger.debug("Socket disconnected.")
 				self.socketConnect()
 
 	def start(self, handler):
@@ -122,7 +122,6 @@ class SocketWriter:
 		self.logger.addHandler(h)
 
 	def send(self, message):
-		self.logger.debug("Sending %s" % message)
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		sock.connect((self.host, self.port))
 		try:

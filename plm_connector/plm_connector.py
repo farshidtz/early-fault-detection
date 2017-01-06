@@ -5,8 +5,24 @@ Socket <-> MQTT
 """
 import sys
 import time
+import logging
+import argparse
 from _socket_controller import SocketReader, SocketWriter
 from _mqtt_controller import MQTTPublisher, MQTTSubscriber
+
+# Parse flags
+parser = argparse.ArgumentParser(description='Connector for Siemens Product lifecycle management (PLM)')
+parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
+args = parser.parse_args()
+
+# Setup logging
+logging_formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s:\t %(message)s')
+h = logging.StreamHandler()
+h.setFormatter(logging_formatter)
+logger = logging.getLogger(__name__)
+if args.verbose:
+    logger.setLevel(logging.DEBUG)
+logger.addHandler(h)
 
 # CONFIG
 SOCKET_HOST = '193.225.89.35'
@@ -30,9 +46,11 @@ def outgoingHandler(json_obj):
     result = json_obj['ResultValue']
     # print("ConfusionMatrix: {}, MCC: {}".format(result['evaluationMetrics'][0]['confusionMatrix'], result['evaluationMetrics'][0]['result']))
     if result['prediction']==1:
+        logger.debug("->PLM {}".format(result['originalInput']['id']))
         sock_writer.send(result['originalInput']['id'])
 
 def incomingHandler(json_obj):
+    logger.debug("->Broker {}".format(json_obj))
     publisher.publishSENML(json_obj[json_obj.keys()[0]], qos=0)
     sys.stdout.flush()
 
