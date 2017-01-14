@@ -1,0 +1,11 @@
+version: '2'
+services:
+  pyro-ns:
+    image: farshidtz/pyro4-ns
+    ports:
+      - "9090:9090"
+    command: ["--host=pyro-ns"]
+  early:
+    build: .
+    depends_on:
+      - pyro-ns
