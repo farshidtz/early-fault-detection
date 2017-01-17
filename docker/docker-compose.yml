@@ -9,3 +9,4 @@ services:
     build: .
     depends_on:
       - pyro-ns
+    command: ["--bname=Agent", "--bpath=agent/agent.py", "--ns"]
