@@ -5,6 +5,7 @@ Socket <-> MQTT
 """
 import sys
 import time
+import uuid
 import logging
 import argparse
 from _socket_controller import SocketReader, SocketWriter
@@ -38,8 +39,8 @@ MQTT_SUBSCRIBE_TOPIC = "/outgoing/DS[1]:EarlyDetector/+"
 sock_reader = SocketReader(SOCKET_HOST, SOCKET_DATA_PORT)
 sock_writer = SocketWriter(SOCKET_HOST, SOCKET_FEEDBACK_PORT)
 # Setup MQTT clients
-publisher = MQTTPublisher(MQTT_BROKER_HOST, MQTT_BROKER_PORT, MQTT_CLIENTID_PREFIX+str(time.time()))
-subscriber = MQTTSubscriber(MQTT_BROKER_HOST, MQTT_BROKER_PORT, MQTT_CLIENTID_PREFIX+str(time.time()))
+publisher = MQTTPublisher(MQTT_BROKER_HOST, MQTT_BROKER_PORT, MQTT_CLIENTID_PREFIX+str(uuid.uuid4()))
+subscriber = MQTTSubscriber(MQTT_BROKER_HOST, MQTT_BROKER_PORT, MQTT_CLIENTID_PREFIX+str(uuid.uuid4()))
 
 
 def outgoingHandler(json_obj):
