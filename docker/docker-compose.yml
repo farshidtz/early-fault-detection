@@ -5,8 +5,24 @@ services:
     ports:
       - "9090:9090"
     command: ["--host=pyro-ns"]
-  early:
+  python-agent:
     build: .
     depends_on:
       - pyro-ns
-    command: ["--bname=Agent", "--bpath=agent/agent.py", "--ns"]
+    ports:
+      - "9100:9100"
+    command: ["--bname=Agent", "--bpath=agent/agent.py", "--host=python-agent", "--port=9100", "--ns"]
+  # python-test:
+    # build: 
+      # context: .
+      # dockerfile: Dockerfile-test
+    # depends_on:
+      # - pyro-ns
+      # - python-agent
+  ceml:
+    build: ../data-processing-agent/
+    links:
+      - pyro-ns
+      - python-agent
+    ports:
+      - "8319:8319"
