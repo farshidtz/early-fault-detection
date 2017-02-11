@@ -137,7 +137,7 @@ class Agent(object):
         return np.random.choice(total, size=sample_size, replace=replace, p=p)
 
     def batchLearn(self, datapoints):
-        self.counter += len(datapoints)
+        # self.counter += len(datapoints)
         print("agent.batchLearn: %s" % self.counter)
 
         for datapoint in datapoints:
@@ -147,6 +147,7 @@ class Agent(object):
                 self.data.append(features)
             except Exception as e:
                 print(e)
+                print("Datapoints: {}".format(json.dumps(datapoint)))
 
         train = np.asarray(self.data)
         # print(train)
@@ -196,11 +197,15 @@ class Agent(object):
 
         data = []
         for datapoint in datapoints:
-            features = Event2Dict(datapoint, self.production_layout, complete=False)
-            # del features['Id'], features['Type'], features['Label']
-            features = np.asarray(features.values())
-            features = features[2:-1].astype(np.float32)
-            data.append(features)
+            try:
+                features = Event2Dict(datapoint, self.production_layout, complete=True)
+                # del features['Id'], features['Type'], features['Label']
+                features = np.asarray(features.values())
+                features = features[2:-1].astype(np.float32)
+                data.append(features)
+            except Exception as e:
+                print(e)
+                print("Datapoints: {}".format(json.dumps(datapoint)))
 
         data = np.asarray(data)
         start_time = time.time()
@@ -208,9 +213,10 @@ class Agent(object):
             predictions = self.clf.predict(data)
         except Exception as e:
             print(e)
-            print(data)
+            print("Data: {}".format(json.dumps(data)))
             print("Batch prediction failed.")
             return np.zeros(len(datapoints)).astype(int).tolist()
+
         print("Batch Prediction in {}s".format(time.time() - start_time))
         return predictions.tolist()
 

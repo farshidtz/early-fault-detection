@@ -89,7 +89,7 @@ def Event2Dict(j, structure, complete=True):
     # print("Measurements: {}/{}".format(len(measurements), len(structure["measurements"])))
 
     if complete and len(structure["measurements"]) != len(measurements):
-        raise Exception("Missing measurements: {} instead of {}".format(len(structure["measurements"]), len(measurements)))
+        raise Exception("Missing measurements: {} instead of {}".format(len(measurements), len(structure["measurements"])))
 
     for measurementID in structure["measurements"]:
         features[measurementID] = None
