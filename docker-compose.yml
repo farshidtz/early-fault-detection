@@ -5,27 +5,29 @@ services:
     ports:
       - "9090:9090"
     command: ["--host=pyro-ns"]
-    stop_signal: SIGKILL
   python-agent:
     build: training/
     depends_on:
       - pyro-ns
+    volumes:
+      - c:/Users/Farshid/Desktop/thesis/early-fault-detection/training/model:/model
+      - c:/Users/Farshid/Desktop/thesis/early-fault-detection/training/agent:/agent
     ports:
       - "9100:9100"
-    command: ["--bname=Agent", "--bpath=agent/agent.py", "--host=python-agent", "--port=9100", "--ns"]
-    stop_signal: SIGKILL
+    command: ["--bname=Agent", "--bpath=/agent/agent.py", "--host=python-agent", "--port=9100", "--ns"]
+  ceml:
+    build: data-processing-agent/
+    depends_on:
+      - pyro-ns
+      - python-agent
+    volumes:
+      - c:/Users/Farshid/Desktop/thesis/early-fault-detection/data-processing-agent/config:/config
+    ports:
+      - "8319:8319"
   # python-test:
     # build: 
-      # context: .
+      # context: training/
       # dockerfile: Dockerfile-test
     # depends_on:
       # - pyro-ns
       # - python-agent
-  ceml:
-    build: data-processing-agent/
-    links:
-      - pyro-ns
-      - python-agent
-    ports:
-      - "8319:8319"
-    stop_signal: SIGKILL

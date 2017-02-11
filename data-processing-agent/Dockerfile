@@ -1,10 +1,13 @@
 FROM java:8-jdk
 
-COPY . /usr/src/app/
+COPY iot.learning.rest.agent-1.4.0-SNAPSHOT.jar /usr/src/app/
 WORKDIR /usr/src/app
 
 ENV CLASSPATH .:./lib/ceml-1.4.0-SNAPSHOT.jar
 
 ENTRYPOINT ["java", "-jar", "iot.learning.rest.agent-1.4.0-SNAPSHOT.jar"]
 
+RUN ln -s /config/conf.cfg ./conf.cfg
+
+VOLUME /config
 EXPOSE 8319

@@ -10,9 +10,11 @@ services:
     build: training/
     depends_on:
       - pyro-ns
+    volumes:
+      - ./data:/data
     ports:
       - "9100:9100"
-    command: ["--bname=Agent", "--bpath=agent/agent.py", "--ns"]
+    command: ["--bname=Agent", "--bpath=agent/agent.py", "--host=python-agent", "--port=9100", "--ns"]
     stop_signal: SIGKILL
   ceml:
     build: ../data-processing-agent/
