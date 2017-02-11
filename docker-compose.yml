@@ -1,0 +1,31 @@
+version: '2'
+services:
+  pyro-ns:
+    image: farshidtz/pyro4-ns
+    ports:
+      - "9090:9090"
+    command: ["--host=pyro-ns"]
+    stop_signal: SIGKILL
+  python-agent:
+    build: training/
+    depends_on:
+      - pyro-ns
+    ports:
+      - "9100:9100"
+    command: ["--bname=Agent", "--bpath=agent/agent.py", "--host=python-agent", "--port=9100", "--ns"]
+    stop_signal: SIGKILL
+  # python-test:
+    # build: 
+      # context: .
+      # dockerfile: Dockerfile-test
+    # depends_on:
+      # - pyro-ns
+      # - python-agent
+  ceml:
+    build: data-processing-agent/
+    links:
+      - pyro-ns
+      - python-agent
+    ports:
+      - "8319:8319"
+    stop_signal: SIGKILL

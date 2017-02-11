@@ -47,7 +47,7 @@
               "max_depth": 90,
               "n_jobs": 4
             },
-            "dir": "/home/farshid/thesis/early-fault-detection/docker/tmp/"
+            "dir": "/data/"
           }
         }
       },

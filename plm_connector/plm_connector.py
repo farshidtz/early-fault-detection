@@ -26,10 +26,10 @@ if args.verbose:
 logger.addHandler(h)
 
 # CONFIG
-SOCKET_HOST = '193.225.89.35'
+SOCKET_HOST = '193.224.59.25'
 SOCKET_DATA_PORT = 5501
 SOCKET_FEEDBACK_PORT = 5502
-MQTT_BROKER_HOST = "almanac-broker"
+MQTT_BROKER_HOST = "iot.eclipse.org"
 MQTT_BROKER_PORT = 1883
 MQTT_CLIENTID_PREFIX = "plm_connector_"
 MQTT_SUBSCRIBE_TOPIC = "/outgoing/DS[1]:EarlyDetector/+"

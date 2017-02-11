@@ -1,4 +1,0 @@
-Pyro4
-numpy
-scipy
-sklearn
