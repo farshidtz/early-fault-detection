@@ -29,6 +29,7 @@ class Agent(object):
         self.loadParameters(classifier)
         self.fitted = False
         self.data = deque([], maxlen=20000)
+        self.counter = 0
 
         if path.isfile(self.path('model.pkl')) and \
             path.isfile(self.path('means.pkl')) and \
@@ -109,14 +110,15 @@ class Agent(object):
         raise NotImplementedError
 
     def predict(self, datapoint):
-        print("agent.predict: %s" % "datapoint")
+        self.counter += 1
+        print("agent.predict: %s" % self.counter)
         # return 1
 
         if not self.fitted:
-            print("Model not trained.")
+            print("Model not trained yet.")
             return 0
 
-        features = Event2Dict(datapoint, complete=False)
+        features = Event2Dict(datapoint, self.production_layout, complete=False)
         features = np.array(features.values())
         # convert measurements to numpy array
         r = features[2:-1].astype(np.float32)
@@ -135,12 +137,16 @@ class Agent(object):
         return np.random.choice(total, size=sample_size, replace=replace, p=p)
 
     def batchLearn(self, datapoints):
-        print("agent.batchLearn: %s" % "json.dumps(datapoints)")
+        self.counter += len(datapoints)
+        print("agent.batchLearn: %s" % self.counter)
 
         for datapoint in datapoints:
-            features = Event2Dict(datapoint)
-            features = np.asarray(features.values())
-            self.data.append(features)
+            try:
+                features = Event2Dict(datapoint,  self.production_layout, complete=True)
+                features = np.asarray(features.values())
+                self.data.append(features)
+            except Exception as e:
+                print(e)
 
         train = np.asarray(self.data)
         # print(train)
@@ -181,15 +187,16 @@ class Agent(object):
         print("Saved in {}s".format(time.time() - start_time))
 
     def batchPredict(self, datapoints):
-        print("agent.batchPredict: %s" % "json.dumps(datapoints)")
+        self.counter += len(datapoints)
+        print("agent.batchPredict: %s" % self.counter)
         # return np.zeros(len(datapoints)).astype(int).tolist()
         if not self.fitted:
-            print("Model not trained.")
+            print("Model not trained yet.")
             return np.zeros(len(datapoints)).astype(int).tolist()
 
         data = []
         for datapoint in datapoints:
-            features = Event2Dict(datapoint, complete=False)
+            features = Event2Dict(datapoint, self.production_layout, complete=False)
             # del features['Id'], features['Type'], features['Label']
             features = np.asarray(features.values())
             features = features[2:-1].astype(np.float32)
@@ -197,7 +204,13 @@ class Agent(object):
 
         data = np.asarray(data)
         start_time = time.time()
-        predictions = self.clf.predict(data)
+        try:
+            predictions = self.clf.predict(data)
+        except Exception as e:
+            print(e)
+            print(data)
+            print("Batch prediction failed.")
+            return np.zeros(len(datapoints)).astype(int).tolist()
         print("Batch Prediction in {}s".format(time.time() - start_time))
         return predictions.tolist()
 
@@ -220,6 +233,7 @@ class Agent(object):
             self.clf_name = classifier["name"]
             self.clf_conf = classifier["conf"]
             self.model_dir = classifier["dir"]
+            self.production_layout = classifier["production_layout"]
             # self.cache_size = classifier['cache_size']
         except KeyError as e:
             raise KeyError("Attribute `%s` is not set in the classifier object." % e.message)

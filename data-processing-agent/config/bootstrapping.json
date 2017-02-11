@@ -1,0 +1,130 @@
+[{
+		"Name": "python",
+		"Descriptors": [{
+				"Name": "measurements",
+				"Type": "OBJECT"
+			}, {
+				"Name": "type",
+				"Type": "OBJECT"
+			}, {
+				"Name": "id",
+				"Type": "OBJECT"
+			}, {
+				"Name": "label",
+				"Type": "NOMINAL_CLASSES",
+				"isTarget": true,
+				"Classes": ["true", "false"]
+			}
+		],
+		"Model": {
+			"Name": "ExternPythonPyro",
+			"Targets": [{
+					"Name": "MatthewsCorrelationCoefficient",
+					"Threshold": 0.8
+				}, {
+					"Name": "SlideAfter",
+					"Threshold": 100
+				}
+			],
+			"Parameters": {
+				"RetrainEvery": 10,
+				"Backend": {
+					"Lookup": true,
+					"NameServer": "pyro-ns",
+					"RegisteredName": "python-agent-0",
+					"ModuleName": "Agent",
+					"ModulePath": "path-to-python-script-if-no-nameserver"
+				},
+				"Classifier": {
+					"name": "random_forest",
+					"conf": {
+						"n_estimators": 100,
+						"class_weight": {
+							"true": 1.0,
+							"false": 0.05
+						},
+						"max_depth": 90,
+						"n_jobs": 4
+					},
+					"dir": "/model/",
+					"production_layout": {
+						"measurements": [
+							"ScreenPrinter/PositionX",
+							"ScreenPrinter/PositionY",
+							"PasteInspection/PosX1",
+							"PasteInspection/PosY1",
+							"PasteInspection/PosX2",
+							"PasteInspection/PosY2",
+							"PasteInspection/PosX3",
+							"PasteInspection/PosY3",
+							"PasteInspection/PosX4",
+							"PasteInspection/PosY4",
+							"PasteInspection/PosX5",
+							"PasteInspection/PosY5",
+							"PasteInspection/PosX6",
+							"PasteInspection/PosY6",
+							"PickAndPlace/MarkerX1",
+							"PickAndPlace/MarkerY1",
+							"PickAndPlace/MarkerX2",
+							"PickAndPlace/MarkerY2",
+							"AOI1/PosX1",
+							"AOI1/PosY1",
+							"AOI1/PosX2",
+							"AOI1/PosY2",
+							"AOI1/PosX3",
+							"AOI1/PosY3",
+							"AOI1/PosX4",
+							"AOI1/PosY4",
+							"AOI1/PosX5",
+							"AOI1/PosY5",
+							"AOI1/PosX6",
+							"AOI1/PosY6",
+							"Owen1/Temp1",
+							"Owen2/Temp2",
+							"Owen3/Temp3",
+							"AOI2/PosX1",
+							"AOI2/PosY1",
+							"AOI2/PosX2",
+							"AOI2/PosY2",
+							"AOI2/PosX3",
+							"AOI2/PosY3",
+							"AOI2/PosX4",
+							"AOI2/PosY4",
+							"AOI2/PosX5",
+							"AOI2/PosY5",
+							"AOI2/PosX6",
+							"AOI2/PosY6",
+							"Housing/HScrew",
+							"ConAssembly1/Con1Screw",
+							"PtAssembly1/Pt1Screw1",
+							"PtAssembly1/Pt1Screw2",
+							"PtAssembly2/Pt2",
+							"Welding/WeldFrequency"
+						],
+						"identical_measurements": {
+							"ConAssembly2/Con2Screw": "ConAssembly1/Con1Screw",
+							"PtAssembly3/Pt2": "PtAssembly2/Pt2"
+						}
+					}
+				}
+			}
+		},
+		"AuxiliaryStreams": [{
+				"statement": "insert into buffer select begin.last.sv as type, begin.bn as id, entries.selectFrom(i=>new{n=i.last.n, v=i.last.v, u=i.last.u, t=i.bt}) as measurements from pattern[ every begin=SenML(last.n='Source/ProdType' and last.sv='ABU1') -> entries=SenML(begin.bn=bn) until fin=SenML(last.n='AOI1/PosY6' and begin.bn=bn)] "
+			}, {
+				"statement": "insert into buffer select begin.last.sv as type, begin.bn as id, entries.selectFrom(i=>new{n=i.last.n, v=i.last.v, u=i.last.u, t=i.bt}) as measurements from pattern[ every begin=SenML(last.n='Source/ProdType' and last.sv='ABU1') -> entries=SenML(begin.bn=bn) until fin=SenML(last.n='AOI2/PosY6' and begin.bn=bn)] "
+			}
+		],
+		"LearningStreams": [{
+				"statement": "select begin.last.sv as type, begin.bn as id, entries.selectFrom(i=>new{n=i.last.n, v=i.last.v, u=i.last.u, t=i.bt}) as measurements, String.valueOf(fin.last.bv) as label from pattern[ every begin=SenML(last.n='Source/ProdType' and last.sv='ABU1') -> entries=SenML(begin.bn=bn) until fin=SenML(last.n='FunctionTest/Quality_OK' and begin.bn=bn)] "
+			}
+		],
+		"DeploymentStreams": [{
+				"statement": "select <id>.predict(*) from buffer"
+			}
+		],
+		"Settings": {
+			"AlwaysDeploy": true
+		}
+	}
+]

@@ -1,71 +1,75 @@
 from collections import OrderedDict
-import copy
+# import copy
 
-Features = OrderedDict([
-    ("Id",None),
-    ("Type",None),
-    ("ScreenPrinter/PositionX",None),
-    ("ScreenPrinter/PositionY",None),
-    ("PasteInspection/PosX1",None),
-    ("PasteInspection/PosY1",None),
-    ("PasteInspection/PosX2",None),
-    ("PasteInspection/PosY2",None),
-    ("PasteInspection/PosX3",None),
-    ("PasteInspection/PosY3",None),
-    ("PasteInspection/PosX4",None),
-    ("PasteInspection/PosY4",None),
-    ("PasteInspection/PosX5",None),
-    ("PasteInspection/PosY5",None),
-    ("PasteInspection/PosX6",None),
-    ("PasteInspection/PosY6",None),
-    ("PickAndPlace/MarkerX1",None),
-    ("PickAndPlace/MarkerY1",None),
-    ("PickAndPlace/MarkerX2",None),
-    ("PickAndPlace/MarkerY2",None),
-    ("AOI1/PosX1",None),
-    ("AOI1/PosY1",None),
-    ("AOI1/PosX2",None),
-    ("AOI1/PosY2",None),
-    ("AOI1/PosX3",None),
-    ("AOI1/PosY3",None),
-    ("AOI1/PosX4",None),
-    ("AOI1/PosY4",None),
-    ("AOI1/PosX5",None),
-    ("AOI1/PosY5",None),
-    ("AOI1/PosX6",None),
-    ("AOI1/PosY6",None),
-    ("Owen1/Temp1",None),
-    ("Owen2/Temp2",None),
-    ("Owen3/Temp3",None),
-    ("AOI2/PosX1",None),
-    ("AOI2/PosY1",None),
-    ("AOI2/PosX2",None),
-    ("AOI2/PosY2",None),
-    ("AOI2/PosX3",None),
-    ("AOI2/PosY3",None),
-    ("AOI2/PosX4",None),
-    ("AOI2/PosY4",None),
-    ("AOI2/PosX5",None),
-    ("AOI2/PosY5",None),
-    ("AOI2/PosX6",None),
-    ("AOI2/PosY6",None),
-    ("Housing/HScrew",None),
-    ("ConAssembly1or2/Con1or2Screw",None),
-    ("PtAssembly1/Pt1Screw1",None),
-    ("PtAssembly1/Pt1Screw2",None),
-    ("PtAssembly2or3/Pt2or3",None),
-    ("Welding/WeldFrequency",None),
-    ("Label",None)
-])
+# Features = OrderedDict([
+#     ("Id",None),
+#     ("Type",None),
+#     ("ScreenPrinter/PositionX",0.),
+#     ("ScreenPrinter/PositionY",0.),
+#     ("PasteInspection/PosX1",0.),
+#     ("PasteInspection/PosY1",0.),
+#     ("PasteInspection/PosX2",0.),
+#     ("PasteInspection/PosY2",0.),
+#     ("PasteInspection/PosX3",0.),
+#     ("PasteInspection/PosY3",0.),
+#     ("PasteInspection/PosX4",0.),
+#     ("PasteInspection/PosY4",0.),
+#     ("PasteInspection/PosX5",0.),
+#     ("PasteInspection/PosY5",0.),
+#     ("PasteInspection/PosX6",0.),
+#     ("PasteInspection/PosY6",0.),
+#     ("PickAndPlace/MarkerX1",0.),
+#     ("PickAndPlace/MarkerY1",0.),
+#     ("PickAndPlace/MarkerX2",0.),
+#     ("PickAndPlace/MarkerY2",0.),
+#     ("AOI1/PosX1",0.),
+#     ("AOI1/PosY1",0.),
+#     ("AOI1/PosX2",0.),
+#     ("AOI1/PosY2",0.),
+#     ("AOI1/PosX3",0.),
+#     ("AOI1/PosY3",0.),
+#     ("AOI1/PosX4",0.),
+#     ("AOI1/PosY4",0.),
+#     ("AOI1/PosX5",0.),
+#     ("AOI1/PosY5",0.),
+#     ("AOI1/PosX6",0.),
+#     ("AOI1/PosY6",0.),
+#     ("Owen1/Temp1",0.),
+#     ("Owen2/Temp2",0.),
+#     ("Owen3/Temp3",0.),
+#     ("AOI2/PosX1",0.),
+#     ("AOI2/PosY1",0.),
+#     ("AOI2/PosX2",0.),
+#     ("AOI2/PosY2",0.),
+#     ("AOI2/PosX3",0.),
+#     ("AOI2/PosY3",0.),
+#     ("AOI2/PosX4",0.),
+#     ("AOI2/PosY4",0.),
+#     ("AOI2/PosX5",0.),
+#     ("AOI2/PosY5",0.),
+#     ("AOI2/PosX6",0.),
+#     ("AOI2/PosY6",0.),
+#     ("Housing/HScrew",0.),
+#     ("ConAssembly1-2/Con1-2Screw",0.),
+#     ("PtAssembly1/Pt1Screw1",0.),
+#     ("PtAssembly1/Pt1Screw2",0.),
+#     ("PtAssembly2-3/Pt2",0.),
+#     ("Welding/WeldFrequency",0.),
+#     ("Label",None)
+# ])
 
 # reduce identical measurements to one feature
-def reduce_measurements(name):
-    # parallel stations
-    if name == "ConAssembly1/Con1Screw" or name == "ConAssembly2/Con2Screw":
-        return "ConAssembly1or2/Con1or2Screw"
-    if name == "PtAssembly2/Pt2" or name == "PtAssembly3/Pt2":
-        return "PtAssembly2or3/Pt2or3"
+def reduce_measurements(identical_measurements, name):
+    if name in identical_measurements:
+        # print("REDUCE:", name, identical_measurements[name])
+        return identical_measurements[name]
+    # # parallel stations
+    # if name == "ConAssembly1/Con1Screw" or name == "ConAssembly2/Con2Screw":
+    #     return "ConAssembly1or2/Con1or2Screw"
+    # if name == "PtAssembly2/Pt2" or name == "PtAssembly3/Pt2":
+    #     return "PtAssembly2or3/Pt2or3"
     return name
+
 
 # converts the result of the following query to python OrderedDict
 # Query:
@@ -75,22 +79,31 @@ def reduce_measurements(name):
 #   entries.selectFrom(i=>new{n=i.last.n, v=i.last.v, u=i.last.u, t=i.bt}) as measurements,
 #   String.valueOf(fin.last.bv) as label
 # from pattern[ every begin=SenML(last.n='Source/ProdType') -> entries=SenML(begin.bn=bn) until fin=SenML(last.n='FunctionTest/Quality_OK' and begin.bn=bn)]
-def Event2Dict(j, complete=True):
-    features = copy.deepcopy(Features)
-    total = len(j['measurements'])
-    if complete and total != 51:
-        raise Exception("Total not 51.")
+def Event2Dict(j, structure, complete=True):
+    # features = copy.deepcopy(Features)
+    features = OrderedDict()
 
     measurements = j['measurements']
-    features["Id"] = j['id']
-    features["Type"] = j['type']
+    features['id'] = j['id']
+    features['type'] = j['type']
+    # print("Measurements: {}/{}".format(len(measurements), len(structure["measurements"])))
 
-    if 'label' in j:
-        features["Label"] = j['label']
+    if complete and len(structure["measurements"]) != len(measurements):
+        raise Exception("Missing measurements: {} instead of {}".format(len(structure["measurements"]), len(measurements)))
+
+    for measurementID in structure["measurements"]:
+        features[measurementID] = None
 
     for entry in measurements:
-        feature_name = reduce_measurements(entry['n'])
+        feature_name = reduce_measurements(structure["identical_measurements"], entry['n'])
         features[feature_name] = entry['v']
+
+    if 'label' in j:
+        features['label'] = j['label']
+    else:
+        features['label'] = None
+
+    # print(features)
 
     return features
 
