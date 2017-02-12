@@ -1,5 +1,5 @@
 [{
-		"Name": "python",
+		"Name": "ABU1",
 		"Descriptors": [{
 				"Name": "measurements",
 				"Type": "OBJECT"
@@ -48,6 +48,7 @@
 					},
 					"dir": "/model/",
 					"production_layout": {
+                        "type": "ABU1",
 						"measurements": [
 							"ScreenPrinter/PositionX",
 							"ScreenPrinter/PositionY",
