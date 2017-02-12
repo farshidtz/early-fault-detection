@@ -34,7 +34,8 @@ subscriber = MQTTSubscriber(conf['mqtt']['broker_host'], conf['mqtt']['broker_po
 
 
 def outgoingHandler(json_obj):
-    result = json_obj['ResultValue']
+    result = json_obj['LastPrediction']
+    logger.debug("Prediction for {}:{} : {}".format(result['originalInput']['type'], result['originalInput']['id'], result['prediction']))
     # print("ConfusionMatrix: {}, MCC: {}".format(result['evaluationMetrics'][0]['confusionMatrix'], result['evaluationMetrics'][0]['result']))
     if result['prediction']==1:
         logger.debug("->PLM {}".format(result['originalInput']['id']))
@@ -42,12 +43,12 @@ def outgoingHandler(json_obj):
 
 def incomingHandler(json_obj):
     logger.debug("->Broker {}".format(json_obj))
-    publisher.publishSENML(json_obj[json_obj.keys()[0]], qos=0)
+    publisher.publishSENML(json_obj[json_obj.keys()[0]], qos=conf['mqtt']['pub_data_qos'])
     sys.stdout.flush()
 
 sock_reader.start(incomingHandler)
 sock_writer.send("ping")
-subscriber.subscribe(conf['mqtt']['feedback_topic'], outgoingHandler, qos=0)
+subscriber.subscribe(conf['mqtt']['feedback_topic'], outgoingHandler, qos=conf['mqtt']['sub_feedback_qos'])
 
 while True:
     try:

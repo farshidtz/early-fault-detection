@@ -9,5 +9,7 @@ mqtt:
   broker_host: farshidpi.duckdns.org
   broker_port: 1883
   clientid_prefix: plm_connector_
-  feedback_topic: /outgoing/DS[1]:EarlyDetector/+
-  #feedback_topic: ceml/output/EarlyDetector
+  #feedback_topic: /outgoing/#
+  feedback_topic: ceml/output/#
+  pub_data_qos: 0
+  sub_feedback_qos: 2 
