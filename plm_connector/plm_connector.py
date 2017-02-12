@@ -3,11 +3,7 @@
 Connector for Siemens Product lifecycle management (PLM)
 Socket <-> MQTT
 """
-import sys
-import time
-import uuid
-import logging
-import argparse
+import sys, time, uuid, logging, argparse, yaml
 from _socket_controller import SocketReader, SocketWriter
 from _mqtt_controller import MQTTPublisher, MQTTSubscriber
 
@@ -25,22 +21,16 @@ if args.verbose:
     logger.setLevel(logging.DEBUG)
 logger.addHandler(h)
 
-# CONFIG
-SOCKET_HOST = '193.224.59.25'
-SOCKET_DATA_PORT = 5501
-SOCKET_FEEDBACK_PORT = 5502
-MQTT_BROKER_HOST = "iot.eclipse.org"
-MQTT_BROKER_PORT = 1883
-MQTT_CLIENTID_PREFIX = "plm_connector_"
-MQTT_SUBSCRIBE_TOPIC = "/outgoing/DS[1]:EarlyDetector/+"
-# MQTT_SUBSCRIBE_TOPIC = "ceml/output/EarlyDetector"
+# Load configurations
+with open("config.yml", 'r') as ymlfile:
+    conf = yaml.load(ymlfile)
 
 # Setup sockets
-sock_reader = SocketReader(SOCKET_HOST, SOCKET_DATA_PORT)
-sock_writer = SocketWriter(SOCKET_HOST, SOCKET_FEEDBACK_PORT)
+sock_reader = SocketReader(conf['plm_socket']['host'], conf['plm_socket']['data_port'])
+sock_writer = SocketWriter(conf['plm_socket']['host'], conf['plm_socket']['feedback_port'])
 # Setup MQTT clients
-publisher = MQTTPublisher(MQTT_BROKER_HOST, MQTT_BROKER_PORT, MQTT_CLIENTID_PREFIX+str(uuid.uuid4()))
-subscriber = MQTTSubscriber(MQTT_BROKER_HOST, MQTT_BROKER_PORT, MQTT_CLIENTID_PREFIX+str(uuid.uuid4()))
+publisher = MQTTPublisher(conf['mqtt']['broker_host'], conf['mqtt']['broker_port'], conf['mqtt']['clientid_prefix']+str(uuid.uuid4()))
+subscriber = MQTTSubscriber(conf['mqtt']['broker_host'], conf['mqtt']['broker_port'], conf['mqtt']['clientid_prefix']+str(uuid.uuid4()))
 
 
 def outgoingHandler(json_obj):
@@ -57,7 +47,7 @@ def incomingHandler(json_obj):
 
 sock_reader.start(incomingHandler)
 sock_writer.send("ping")
-subscriber.subscribe(MQTT_SUBSCRIBE_TOPIC, outgoingHandler, qos=0)
+subscriber.subscribe(conf['mqtt']['feedback_topic'], outgoingHandler, qos=0)
 
 while True:
     try:

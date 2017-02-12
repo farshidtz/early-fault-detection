@@ -1,0 +1,13 @@
+# PLM's socket
+plm_socket: 
+  host: 193.224.59.25
+  data_port: 5501
+  feedback_port: 5502
+
+# MQTT Broker
+mqtt:
+  broker_host: farshidpi.duckdns.org
+  broker_port: 1883
+  clientid_prefix: plm_connector_
+  feedback_topic: /outgoing/DS[1]:EarlyDetector/+
+  #feedback_topic: ceml/output/EarlyDetector
