@@ -3,14 +3,12 @@ Training / Prediction Agent
 """
 
 import numpy as np
-import random
-import json
-import time
+import random, json, time
 from scipy.stats import logistic
 from collections import deque
 from sklearn.externals import joblib
-from os import path
-from _converter import SensorThings2Dict, Event2Dict
+from os import path, makedirs
+from _converter import SensorThings2Dict, Event2Dict, validate
 from _evaluation import print_metrics
 import _models
 
@@ -31,6 +29,9 @@ class Agent(object):
         self.data = deque([], maxlen=20000)
         self.counter = 0
 
+        if not path.exists(self.model_dir):
+            makedirs(self.model_dir)
+
         if path.isfile(self.path('model.pkl')) and \
             path.isfile(self.path('means.pkl')) and \
             path.isfile(self.path('data.pkl')):
@@ -48,70 +49,13 @@ class Agent(object):
         # self.pre_train(["C:/Users/Farshid/Desktop/thesis/early-fault-detection/training/agent/ABU1.txt"])
         # return self.clf
 
-    def pre_train(self, training_files):
-        print("agent.pre_train: %s" % training_files)
-        data = []
-        bad = 0
-        for filename in training_files:
-            if not path.exists(filename):
-                print("File does not exist: %s" % filename)
-                continue
-            print("Loading rows... {}".format(filename))
-            with open(filename) as f:
-                for line in f:
-                    try:
-                        features = SensorThings2Dict(json.loads(line))
-                        data.append(list(features.values()))
-                    except Exception, e:
-                        # print(e)
-                        bad+=1
-
-        print("Incomplete rows: {}".format(bad))
-        print("Loaded: {}".format(len(data)))
-
-        """ random split seed """
-        data = np.asarray(data)
-        mask = np.random.rand(len(data)) < 0.9
-
-        """ split into train and test sets """
-        train = data[mask]
-        test = data[~mask]
-        print("Train Total: {} Good: {} Faulty: {} Ratio: {}".format(len(train), len(train[train[:,-1]=='True']), len(train[train[:,-1]=='False']), float(len(train[train[:,-1]=='False']))/len(train)))
-        print("Test  Total: {} Good: {} Faulty: {} Ratio: {}".format(len(test), len(test[test[:,-1]=='True']), len(test[test[:,-1]=='False']), float(len(test[test[:,-1]=='False']))/len(train)))
-
-        faulty = train[train[:,-1]=='False']
-        not_faulty = train[train[:,-1]=='True']
-
-        self.means = np.mean(not_faulty[:,2:-1].astype(np.float32), axis=0)
-
-        """ down/up sample data """
-        samples = np.random.choice(len(not_faulty), 5000, replace=False)
-        train = np.concatenate((not_faulty[samples], faulty))
-        print("Train Total: {} Good: {} Faulty: {} Ratio: {}".format(len(train), len(train[train[:,-1]=='True']), len(train[train[:,-1]=='False']), float(len(train[train[:,-1]=='False']))/len(train)))
-
-        train_data = train[:,2:-1].astype(np.float32)
-        test_data = test[:,2:-1].astype(np.float32)
-
-        train_labels = np.array(train[:,-1]=='False').astype(np.int32)
-        test_labels = np.array(test[:,-1]=='False').astype(np.int32)
-
-        """ train model """
-        self.clf = self.clf.fit(train_data, train_labels)
-        self.fitted = True
-        print_metrics(train_labels, self.clf.predict(train_data))
-        print_metrics(test_labels, self.clf.predict(test_data))
-
-        # save to disk
-        joblib.dump(self.means, self.path('/means.pkl'))
-        joblib.dump(self.clf, self.path('model.pkl'))
-
     def learn(self, datapoint):
         print("agent.learn: %s" % "datapoint")
         raise NotImplementedError
 
     def predict(self, datapoint):
         self.counter += 1
-        print("agent.predict: %s" % self.counter)
+        print("agent.predict: {} - {} {}".format(self.production_layout["type"], datapoint['type'], self.counter))
         # return 1
 
         if not self.fitted:
@@ -147,7 +91,6 @@ class Agent(object):
                 self.data.append(features)
             except Exception as e:
                 print(e)
-                print("Datapoints: {}".format(json.dumps(datapoint)))
 
         train = np.asarray(self.data)
         # print(train)
@@ -198,14 +141,20 @@ class Agent(object):
         data = []
         for datapoint in datapoints:
             try:
-                features = Event2Dict(datapoint, self.production_layout, complete=True)
+                features = Event2Dict(datapoint, self.production_layout, complete=False)
                 # del features['Id'], features['Type'], features['Label']
                 features = np.asarray(features.values())
                 features = features[2:-1].astype(np.float32)
+
+                # fill nans with global means
+                w = np.where(np.isnan(features))
+                if np.any(w):
+                    print("Missing: {}".format(validate(datapoint, self.production_layout)))
+                features[w] = self.means[w]
+
                 data.append(features)
             except Exception as e:
                 print(e)
-                print("Datapoints: {}".format(json.dumps(datapoint)))
 
         data = np.asarray(data)
         start_time = time.time()
@@ -238,12 +187,68 @@ class Agent(object):
         try:
             self.clf_name = classifier["name"]
             self.clf_conf = classifier["conf"]
-            self.model_dir = classifier["dir"]
             self.production_layout = classifier["production_layout"]
-            # self.cache_size = classifier['cache_size']
+            self.model_dir = path.join(classifier["dir"], self.production_layout["type"])
         except KeyError as e:
             raise KeyError("Attribute `%s` is not set in the classifier object." % e.message)
 
     # returns the filename appended to the model path
     def path(self, filename):
         return path.join(self.model_dir, filename)
+
+    # def pre_train(self, training_files):
+    #     print("agent.pre_train: %s" % training_files)
+    #     data = []
+    #     bad = 0
+    #     for filename in training_files:
+    #         if not path.exists(filename):
+    #             print("File does not exist: %s" % filename)
+    #             continue
+    #         print("Loading rows... {}".format(filename))
+    #         with open(filename) as f:
+    #             for line in f:
+    #                 try:
+    #                     features = SensorThings2Dict(json.loads(line))
+    #                     data.append(list(features.values()))
+    #                 except Exception, e:
+    #                     # print(e)
+    #                     bad+=1
+    #
+    #     print("Incomplete rows: {}".format(bad))
+    #     print("Loaded: {}".format(len(data)))
+    #
+    #     """ random split seed """
+    #     data = np.asarray(data)
+    #     mask = np.random.rand(len(data)) < 0.9
+    #
+    #     """ split into train and test sets """
+    #     train = data[mask]
+    #     test = data[~mask]
+    #     print("Train Total: {} Good: {} Faulty: {} Ratio: {}".format(len(train), len(train[train[:,-1]=='True']), len(train[train[:,-1]=='False']), float(len(train[train[:,-1]=='False']))/len(train)))
+    #     print("Test  Total: {} Good: {} Faulty: {} Ratio: {}".format(len(test), len(test[test[:,-1]=='True']), len(test[test[:,-1]=='False']), float(len(test[test[:,-1]=='False']))/len(train)))
+    #
+    #     faulty = train[train[:,-1]=='False']
+    #     not_faulty = train[train[:,-1]=='True']
+    #
+    #     self.means = np.mean(not_faulty[:,2:-1].astype(np.float32), axis=0)
+    #
+    #     """ down/up sample data """
+    #     samples = np.random.choice(len(not_faulty), 5000, replace=False)
+    #     train = np.concatenate((not_faulty[samples], faulty))
+    #     print("Train Total: {} Good: {} Faulty: {} Ratio: {}".format(len(train), len(train[train[:,-1]=='True']), len(train[train[:,-1]=='False']), float(len(train[train[:,-1]=='False']))/len(train)))
+    #
+    #     train_data = train[:,2:-1].astype(np.float32)
+    #     test_data = test[:,2:-1].astype(np.float32)
+    #
+    #     train_labels = np.array(train[:,-1]=='False').astype(np.int32)
+    #     test_labels = np.array(test[:,-1]=='False').astype(np.int32)
+    #
+    #     """ train model """
+    #     self.clf = self.clf.fit(train_data, train_labels)
+    #     self.fitted = True
+    #     print_metrics(train_labels, self.clf.predict(train_data))
+    #     print_metrics(test_labels, self.clf.predict(test_data))
+    #
+    #     # save to disk
+    #     joblib.dump(self.means, self.path('/means.pkl'))
+    #     joblib.dump(self.clf, self.path('model.pkl'))

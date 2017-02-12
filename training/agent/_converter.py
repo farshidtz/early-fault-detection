@@ -89,8 +89,12 @@ def Event2Dict(j, structure, complete=True):
     # print("Measurements: {}/{}".format(len(measurements), len(structure["measurements"])))
 
     if complete and len(structure["measurements"]) != len(measurements):
-        raise Exception("Missing measurements: {} instead of {}".format(len(measurements), len(structure["measurements"])))
+        raise Exception("Missing measurements: {} instead of {}\n missing {}".format(
+            len(measurements),
+            len(structure["measurements"]),
+            validate(j, structure)))
 
+    # TODO: optimize. Can I do this only once?
     for measurementID in structure["measurements"]:
         features[measurementID] = None
 
@@ -107,6 +111,18 @@ def Event2Dict(j, structure, complete=True):
 
     return features
 
+def validate(j, structure):
+    features = OrderedDict()
+    for measurementID in structure["measurements"]:
+        features[measurementID] = None
+    for entry in j['measurements']:
+        features[reduce_measurements(structure["identical_measurements"], entry['n'])] = True
+
+    not_exist = []
+    for feature, exist in features.items():
+        if not exist:
+            not_exist.append(feature)
+    return not_exist
 
 # converts ResultValue of json OGC-SensorThings to python OrderedDict
 def SensorThings2Dict(j, complete=True):
