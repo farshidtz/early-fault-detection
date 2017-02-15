@@ -55,7 +55,7 @@ class Agent(object):
 
     def predict(self, datapoint):
         self.counter += 1
-        print("agent.predict: {} - {} {}".format(self.production_layout["type"], datapoint['type'], self.counter))
+        print("agent.predict: {}<-{} {}".format(self.production_layout["type"], datapoint['type'], self.counter))
         # return 1
 
         if not self.fitted:
@@ -125,10 +125,14 @@ class Agent(object):
         # re-calculate means of this sub-sample
         self.means = np.mean(not_faulty[samples,2:-1].astype(np.float32), axis=0)
         # save to disk
-        joblib.dump(self.clf, self.path('model.pkl'))
-        joblib.dump(self.means, self.path('means.pkl'))
-        joblib.dump(self.data, self.path('data.pkl'))
-        print("Saved in {}s".format(time.time() - start_time))
+        try:
+            joblib.dump(self.clf, self.path('model.pkl'))
+            joblib.dump(self.means, self.path('means.pkl'))
+            joblib.dump(self.data, self.path('data.pkl'))
+        except Exception as e:
+            print("Unable to save model.")
+            raise IOError(str(e))
+        print("Saved to {} in {}s".format(self.model_dir, time.time() - start_time))
 
     def batchPredict(self, datapoints):
         self.counter += len(datapoints)

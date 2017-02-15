@@ -30,7 +30,7 @@
       "Parameters": {
         "RetrainEvery": 100,
         "Backend": {
-          "Lookup": true,
+          "Lookup": false,
           "NameServer": "pyro-ns",
           "RegisteredName": "python-agent-0",
           "ModuleName": "Agent",
@@ -47,7 +47,7 @@
             "max_depth": 90,
             "n_jobs": 4
           },
-          "dir": "/model/",
+          "dir": "/home/farshid/thesis/early-fault-detection/training/model/",
           "production_layout": {
             "type": "ABU1",
             "measurements": [
@@ -159,7 +159,7 @@
     "Parameters": {
       "RetrainEvery": 100,
       "Backend": {
-        "Lookup": true,
+        "Lookup": false,
         "NameServer": "pyro-ns",
         "RegisteredName": "python-agent-0",
         "ModuleName": "Agent",
@@ -176,7 +176,7 @@
           "max_depth": 90,
           "n_jobs": 4
         },
-        "dir": "/model/",
+        "dir": "/home/farshid/thesis/early-fault-detection/training/model/",
         "production_layout": {
           "type": "ABU2",
           "measurements": [
