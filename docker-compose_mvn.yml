@@ -14,7 +14,7 @@ services:
       - /home/farshid/thesis/early-fault-detection/training/agent:/agent
     ports:
       - "9100:9100"
-    command: ["--bname=Agent", "--bpath=agent/agent.py", "--host=python-agent", "--port=9100", "--ns"]
+    command: ["--bname=Agent", "--bpath=/agent/agent.py", "--host=python-agent", "--port=9100", "--ns"]
   ceml:
     build: 
       context: ../data-processing-agent/
