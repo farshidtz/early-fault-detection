@@ -3,7 +3,7 @@ Training / Prediction Agent
 """
 
 import numpy as np
-import random, json, time
+import random, json, time, thread
 from scipy.stats import logistic
 from collections import deque
 from sklearn.externals import joblib
@@ -118,21 +118,16 @@ class Agent(object):
         start_time = time.time()
         self.clf = self.clf.fit(train_data, train_labels)
         self.fitted = True
-        print("Trained in {}s".format(time.time() - start_time))
-        print_metrics(train_labels, self.clf.predict(train_data))
 
-        start_time = time.time()
         # re-calculate means of this sub-sample
         self.means = np.mean(not_faulty[samples,2:-1].astype(np.float32), axis=0)
-        # save to disk
-        try:
-            joblib.dump(self.clf, self.path('model.pkl'))
-            joblib.dump(self.means, self.path('means.pkl'))
-            joblib.dump(self.data, self.path('data.pkl'))
-        except Exception as e:
-            print("Unable to save model.")
-            raise IOError(str(e))
-        print("Saved to {} in {}s".format(self.model_dir, time.time() - start_time))
+
+        print("Trained in {}s".format(time.time() - start_time))
+        #print_metrics(train_labels, self.clf.predict(train_data))
+        
+        # Save model to disk 
+        #self.saveModel(np.copy(self.clf), np.copy(self.means), np.copy(self.data))
+        thread.start_new_thread(self.saveModel, (self.clf, self.means, self.data,))
 
     def batchPredict(self, datapoints):
         self.counter += len(datapoints)
@@ -199,6 +194,18 @@ class Agent(object):
     # returns the filename appended to the model path
     def path(self, filename):
         return path.join(self.model_dir, filename)
+
+    def saveModel(self, clf, means, data):
+        start_time = time.time()
+        try:
+            # Save to disk
+            joblib.dump(clf, self.path('model.pkl'))
+            joblib.dump(means, self.path('means.pkl'))
+            joblib.dump(data, self.path('data.pkl'))
+        except Exception as e:
+            print("Unable to save model.")
+            raise IOError(str(e))
+        print("Saved to {} in {}s".format(self.model_dir, time.time() - start_time))
 
     # def pre_train(self, training_files):
     #     print("agent.pre_train: %s" % training_files)
