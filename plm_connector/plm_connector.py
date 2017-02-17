@@ -38,11 +38,16 @@ def outgoingHandler(json_obj):
     logger.debug("Prediction for {}:{} : {}".format(result['originalInput']['type'], result['originalInput']['id'], result['prediction']))
     # print("ConfusionMatrix: {}, MCC: {}".format(result['evaluationMetrics'][0]['confusionMatrix'], result['evaluationMetrics'][0]['result']))
     if result['prediction']==1:
-        logger.debug("->PLM {}".format(result['originalInput']['id']))
-        sock_writer.send(result['originalInput']['id'])
+	id = result['originalInput']['id']
+	type = result['originalInput']['type']
+	s = id.split('/')
+	s.insert(2, type)
+	id = '/'.join(s)
+        logger.debug("->PLM {}".format(id))
+        sock_writer.send(id)
 
 def incomingHandler(json_obj):
-    logger.debug("->Broker {}".format(json_obj))
+    #logger.debug("->Broker {}".format(json_obj))
     publisher.publishSENML(json_obj[json_obj.keys()[0]], qos=conf['mqtt']['pub_data_qos'])
     sys.stdout.flush()
 
