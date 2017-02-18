@@ -8,6 +8,7 @@ from scipy.stats import logistic
 from collections import deque
 from sklearn.externals import joblib
 from sklearn.base import clone
+from copy import deepcopy
 from os import path, makedirs
 from _converter import SensorThings2Dict, Event2Dict, validate
 from _evaluation import print_metrics
@@ -129,7 +130,7 @@ class Agent(object):
 
         # Save model to disk
         #self.saveModel(np.copy(self.clf), np.copy(self.means), np.copy(self.data))
-        thread.start_new_thread(self.saveModel, (clone(self.clf), clone(self.means), clone(self.data),))
+        thread.start_new_thread(self.saveModel, (clone(self.clf), deepcopy(self.means), deepcopy(self.data),))
 
     def batchPredict(self, datapoints):
         self.counter += len(datapoints)
