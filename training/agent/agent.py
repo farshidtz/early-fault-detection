@@ -3,7 +3,7 @@ Training / Prediction Agent
 """
 
 import numpy as np
-import random, json, time, thread
+import random, json, time, thread, threading
 from scipy.stats import logistic
 from collections import deque
 from sklearn.externals import joblib
@@ -28,6 +28,7 @@ class Agent(object):
         self.fitted = False
         self.data = deque([], maxlen=20000)
         self.counter = 0
+        self.lock = threading.Lock()
 
         if not path.exists(self.model_dir):
             makedirs(self.model_dir)
@@ -124,8 +125,8 @@ class Agent(object):
 
         print("Trained in {}s".format(time.time() - start_time))
         #print_metrics(train_labels, self.clf.predict(train_data))
-        
-        # Save model to disk 
+
+        # Save model to disk
         #self.saveModel(np.copy(self.clf), np.copy(self.means), np.copy(self.data))
         thread.start_new_thread(self.saveModel, (self.clf, self.means, self.data,))
 
@@ -196,16 +197,17 @@ class Agent(object):
         return path.join(self.model_dir, filename)
 
     def saveModel(self, clf, means, data):
-        start_time = time.time()
-        try:
-            # Save to disk
-            joblib.dump(clf, self.path('model.pkl'))
-            joblib.dump(means, self.path('means.pkl'))
-            joblib.dump(data, self.path('data.pkl'))
-        except Exception as e:
-            print("Unable to save model.")
-            raise IOError(str(e))
-        print("Saved to {} in {}s".format(self.model_dir, time.time() - start_time))
+        with self.lock:
+            start_time = time.time()
+            try:
+                # Save to disk
+                joblib.dump(clf, self.path('model.pkl'))
+                joblib.dump(means, self.path('means.pkl'))
+                joblib.dump(data, self.path('data.pkl'))
+            except Exception as e:
+                print("Unable to save model.")
+                raise IOError(str(e))
+            print("Saved to {} in {}s".format(self.model_dir, time.time() - start_time))
 
     # def pre_train(self, training_files):
     #     print("agent.pre_train: %s" % training_files)
