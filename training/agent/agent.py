@@ -7,7 +7,6 @@ import random, json, time, thread, threading
 from scipy.stats import logistic
 from collections import deque
 from sklearn.externals import joblib
-from sklearn.base import clone
 from copy import deepcopy
 from os import path, makedirs
 from _converter import SensorThings2Dict, Event2Dict, validate
@@ -86,51 +85,51 @@ class Agent(object):
     def batchLearn(self, datapoints):
         # self.counter += len(datapoints)
         print("agent.batchLearn: %s" % self.counter)
+        with self.lock:
+            for datapoint in datapoints:
+                try:
+                    features = Event2Dict(datapoint,  self.production_layout, complete=True)
+                    features = np.asarray(features.values())
+                    self.data.append(features)
+                except Exception as e:
+                    print(e)
 
-        for datapoint in datapoints:
-            try:
-                features = Event2Dict(datapoint,  self.production_layout, complete=True)
-                features = np.asarray(features.values())
-                self.data.append(features)
-            except Exception as e:
-                print(e)
+            train = np.asarray(self.data)
+            # print(train)
+            faulty = train[train[:,-1]==_false]
+            not_faulty = train[train[:,-1]==_true]
+            print("Train Total: {} Good: {} Faulty: {} Ratio: {}".format(len(train), len(not_faulty), len(faulty), len(faulty)/float(len(train))))
+            if(len(faulty)==0 or len(not_faulty)==0):
+                print("Waiting for samples from both classes.")
+                return
 
-        train = np.asarray(self.data)
-        # print(train)
-        faulty = train[train[:,-1]==_false]
-        not_faulty = train[train[:,-1]==_true]
-        print("Train Total: {} Good: {} Faulty: {} Ratio: {}".format(len(train), len(not_faulty), len(faulty), len(faulty)/float(len(train))))
-        if(len(faulty)==0 or len(not_faulty)==0):
-            print("Waiting for samples from both classes.")
-            return
+            sample_size = np.min([5000, len(not_faulty)])
+            samples = self.logistic_choice(len(not_faulty), sample_size)
+            # TODO: Upsample faulties with logistic_choice(replace=True)
+            f_sample_size = np.min([1000, len(faulty)])
+            f_samples = self.logistic_choice(len(faulty), f_sample_size)
+            # Put samples together and shuffle
+            train = np.concatenate((not_faulty[samples], faulty[f_samples]))
+            train = np.random.permutation(train)
+            print("Resampled Train Total: {} Good: {} Faulty: {} Ratio: {}".format(len(train), len(samples), len(f_samples), len(f_samples)/float(len(train))))
 
-        sample_size = np.min([5000, len(not_faulty)])
-        samples = self.logistic_choice(len(not_faulty), sample_size)
-        # TODO: Upsample faulties with logistic_choice(replace=True)
-        f_sample_size = np.min([1000, len(faulty)])
-        f_samples = self.logistic_choice(len(faulty), f_sample_size)
-        # Put samples together and shuffle
-        train = np.concatenate((not_faulty[samples], faulty[f_samples]))
-        train = np.random.permutation(train)
-        print("Resampled Train Total: {} Good: {} Faulty: {} Ratio: {}".format(len(train), len(samples), len(f_samples), len(f_samples)/float(len(train))))
+            train_data = train[:,2:-1].astype(np.float32)
+            train_labels = np.array(train[:,-1]==_false).astype(np.int32)
 
-        train_data = train[:,2:-1].astype(np.float32)
-        train_labels = np.array(train[:,-1]==_false).astype(np.int32)
+            """ train model """
+            start_time = time.time()
+            self.clf = self.clf.fit(train_data, train_labels)
+            self.fitted = True
 
-        """ train model """
-        start_time = time.time()
-        self.clf = self.clf.fit(train_data, train_labels)
-        self.fitted = True
+            # re-calculate means of this sub-sample
+            self.means = np.mean(not_faulty[samples,2:-1].astype(np.float32), axis=0)
 
-        # re-calculate means of this sub-sample
-        self.means = np.mean(not_faulty[samples,2:-1].astype(np.float32), axis=0)
+            print("Trained in {}s".format(time.time() - start_time))
+            #print_metrics(train_labels, self.clf.predict(train_data))
 
-        print("Trained in {}s".format(time.time() - start_time))
-        #print_metrics(train_labels, self.clf.predict(train_data))
-
-        # Save model to disk
-        #self.saveModel(np.copy(self.clf), np.copy(self.means), np.copy(self.data))
-        thread.start_new_thread(self.saveModel, (clone(self.clf), deepcopy(self.means), deepcopy(self.data),))
+            # Save model to disk
+            #self.saveModel(np.copy(self.clf), np.copy(self.means), np.copy(self.data))
+            thread.start_new_thread(self.saveModel, (deepcopy(self.clf), deepcopy(self.means), deepcopy(self.data),))
 
     def batchPredict(self, datapoints):
         self.counter += len(datapoints)
@@ -199,17 +198,16 @@ class Agent(object):
         return path.join(self.model_dir, filename)
 
     def saveModel(self, clf, means, data):
-        with self.lock:
-            start_time = time.time()
-            try:
-                # Save to disk
-                joblib.dump(clf, self.path('model.pkl'))
-                joblib.dump(means, self.path('means.pkl'))
-                joblib.dump(data, self.path('data.pkl'))
-            except Exception as e:
-                print("Unable to save model.")
-                raise IOError(str(e))
-            print("Saved to {} in {}s".format(self.model_dir, time.time() - start_time))
+        start_time = time.time()
+        try:
+            # Save to disk
+            joblib.dump(clf, self.path('model.pkl'))
+            joblib.dump(means, self.path('means.pkl'))
+            joblib.dump(data, self.path('data.pkl'))
+        except Exception as e:
+            print("Unable to save model.")
+            raise IOError(str(e))
+        print("Saved to {} in {}s".format(self.model_dir, time.time() - start_time))
 
     # def pre_train(self, training_files):
     #     print("agent.pre_train: %s" % training_files)
