@@ -9,14 +9,18 @@ def on_connect(client, userdata, rc):
 	print("Connected with result code "+str(rc))
 	# Subscribing in on_connect() means that if we lose the connection and
 	# reconnect then subscriptions will be renewed.
-	client.subscribe("/outgoing/#", qos=2)
+	client.subscribe("/outgoing/#", qos=0)
 
 # The callback for when a PUBLISH message is received from the server.
+counter = {}
 def on_message(client, userdata, msg):
-	print 'Message: '+str(msg.payload)
+	# print 'Message: '+str(msg.payload)
 	j = json.loads(msg.payload)
-	type = j['ResultValue']['type']['e'][0]['sv']
-	print(type)
+	type = j['ResultValue']['type']
+	if type not in counter:
+		counter[type] = 0
+	counter[type] += 1
+	print(counter)
 	with open(type+".txt", "a") as myfile:
 		myfile.write(msg.payload+'\n')
 
