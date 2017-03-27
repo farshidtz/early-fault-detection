@@ -6,7 +6,7 @@ plm_socket:
 
 # MQTT Broker
 mqtt:
-  broker_host: farshidpi.duckdns.org
+  broker_host: almanac-broker
   broker_port: 1883
   clientid_prefix: plm_connector_
   #feedback_topic: /outgoing/#

@@ -1,0 +1,15 @@
+{
+	"plm_socket": {
+		"host": "193.224.59.25",
+		"data_port": 5501,
+		"feedback_port": 5502
+	},
+	"mqtt": {
+		"broker_host": "almanac-broker",
+		"broker_port": 1883,
+		"clientid_prefix": "plm_connector_",
+		"feedback_topic": "ceml/output/#",
+		"pub_data_qos": 0,
+		"sub_feedback_qos": 2
+	}
+}

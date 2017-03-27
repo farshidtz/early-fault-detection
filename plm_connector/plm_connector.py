@@ -3,7 +3,7 @@
 Connector for Siemens Product lifecycle management (PLM)
 Socket <-> MQTT
 """
-import sys, time, uuid, logging, argparse, yaml
+import sys, time, uuid, logging, argparse, json
 from _socket_controller import SocketReader, SocketWriter
 from _mqtt_controller import MQTTPublisher, MQTTSubscriber
 
@@ -22,8 +22,8 @@ if args.verbose:
 logger.addHandler(h)
 
 # Load configurations
-with open("config.yml", 'r') as ymlfile:
-    conf = yaml.load(ymlfile)
+with open("config.json", 'r') as f:
+    conf = json.load(f)
 
 # Setup sockets
 sock_reader = SocketReader(conf['plm_socket']['host'], conf['plm_socket']['data_port'])
