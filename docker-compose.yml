@@ -10,8 +10,8 @@ services:
     depends_on:
       - pyro-ns
     volumes:
-      - c:/Users/Farshid/Desktop/thesis/early-fault-detection/training/model:/model
-      - c:/Users/Farshid/Desktop/thesis/early-fault-detection/training/agent:/agent
+      - ./training/model:/model
+      - ./training/agent:/agent
     ports:
       - "9100:9100"
     command: ["--bname=Agent", "--bpath=/agent/agent.py", "--host=python-agent", "--port=9100", "--ns"]
@@ -21,7 +21,7 @@ services:
       - pyro-ns
       - python-agent
     volumes:
-      - c:/Users/Farshid/Desktop/thesis/early-fault-detection/data-processing-agent/config:/config
+      - ./data-processing-agent/config:/config
     ports:
       - "8319:8319"
   # python-test:
