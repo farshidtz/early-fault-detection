@@ -97,10 +97,12 @@ def Event2Dict(j, structure, complete=True):
     # TODO: optimize. Can I do this only once?
     for measurementID in structure["measurements"]:
         features[measurementID] = None
-
+    
+    timestamps = OrderedDict()
     for entry in measurements:
         feature_name = reduce_measurements(structure["identical_measurements"], entry['n'])
         features[feature_name] = entry['v']
+        timestamps[feature_name] = entry['t']
 
     if 'label' in j:
         features['label'] = j['label']
@@ -109,7 +111,7 @@ def Event2Dict(j, structure, complete=True):
 
     # print(features)
 
-    return features
+    return features, timestamps
 
 def validate(j, structure):
     features = OrderedDict()
