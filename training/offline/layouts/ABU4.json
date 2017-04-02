@@ -36,13 +36,14 @@
       "AOI2/PosY4",
       "AOI2/PosX5",
       "Housing/HScrew",
-      "ConAssembly2/Con2Screw",
+      "ConAssembly1/Con1Screw",
       "PtAssembly1/Pt1Screw1",
       "PtAssembly1/Pt1Screw2",
       "PtAssembly2/Pt2",
       "Welding/WeldFrequency"
     ],
     "identical_measurements": {
+      "ConAssembly2/Con2Screw": "ConAssembly1/Con1Screw",
       "PtAssembly3/Pt2": "PtAssembly2/Pt2"
     }
 }
