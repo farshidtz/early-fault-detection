@@ -10,6 +10,7 @@ from _mqtt_controller import MQTTPublisher, MQTTSubscriber
 # Parse flags
 parser = argparse.ArgumentParser(description='Connector for Siemens Product lifecycle management (PLM)')
 parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
+parser.add_argument("-c", "--conf", help="path to config file", required=True)
 args = parser.parse_args()
 
 # Setup logging
@@ -22,7 +23,7 @@ if args.verbose:
 logger.addHandler(h)
 
 # Load configurations
-with open("config.json", 'r') as f:
+with open(args.conf, 'r') as f:
     conf = json.load(f)
 
 # Setup sockets
