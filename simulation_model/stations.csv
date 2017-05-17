@@ -1,0 +1,18 @@
+,ABU1,ABU2,ABU3,ABU4,ABU5,ABU6,Description,Link
+ScreenPrinter,2,2,2,2,2,2,Covers the PCB with solder paste at the right points using a stencil,https://www.youtube.com/watch?v=pHjP5_vDsBQ
+PasteInspection,12,12,12,9,12,12,Optically checks if the PCB is correctly covered by paste.,
+PickAndPlace,4,4,4,4,4,4,Places the surface mount devices/components on the PCB (on the solder paste),https://www.youtube.com/watch?v=S8qkaTsr2_o
+AOI1,12,12,12,9,12,12,"Automated optical inspection machine, checking if components are correctly mounted, e.g without shifting, rotating etc.",
+Owen1,1,1,1,1,1,1,"Technicall, there is only a single owen, it is only split up to three object because of simuation logic: each owen objects correspond to on heating step of a long owen, with an inline conveyor belt. To get the right solder joints, more heting zones/steps are needed, in this case three or four heting zones. The reflow owen first melts the solder paste, thus the paste covers the pins of the comopnents, and joints becomes solid during the cooling steps, fixing the components on  the board.",https://www.youtube.com/watch?v=Zw53kxy7yL0
+Owen2,1,,1,,1,,,
+Owen3,1,,,,1,1,,
+AOI2,12,12,12,9,12,12,"Very similar to AOI1, it cheks the overal quality of the surface mounting.",
+Housing,1,1,1,1,1,1,"Placing the PCB in a plastic house by a human operator, by placing and screwing processes",
+ConAssembly1,0.5,0.5,,0.5,,,"Mounting the larger, not surface mounted connectors on the board/house manually by screwing.",
+ConAssembly2,0.5,0.5,,0.5,,,,
+PtAssembly1,2,2,2,2,2,2,"Manual inserton/assembly of additional components, typically spirngs, conectors auxiliary modules.",
+PtAssembly2,0.5,0.5,0.5,0.5,0.5,0.5,,
+PtAssembly3,0.5,0.5,0.5,0.5,0.5,0.5,,
+Welding,1,1,1,1,1,1,"The house of the product is closed by fixing the lid with high freuency welding, locally melting the plasitc surface (shaling it with high frequency, small apmlitude) and fixing the lid after the chilling.",
+SUM,51,49,49,40,50,49,,
+Collected from Log,51,49,49,40,50,49,,
