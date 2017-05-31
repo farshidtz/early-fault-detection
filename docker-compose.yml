@@ -1,9 +1,20 @@
 version: '2'
 services:
+  mosquitto:
+    image: eclipse-mosquitto
+    ports:
+      - 1883:1883
+  plm_connector:
+    build: plm_connector
+    links:
+      - mosquitto
+    volumes:
+     - ./plm_connector/config:/config
+    command: ["-c", "/config/config.json", "-v"]
   pyro-ns:
     image: farshidtz/pyro4-ns
-    ports:
-      - "9090:9090"
+    # ports:
+    #   - "9090:9090"
     command: ["--host=pyro-ns"]
   python-agent:
     build: training/
@@ -12,22 +23,23 @@ services:
     volumes:
       - ./training/model:/model
       - ./training/agent:/agent
-    ports:
-      - "9100:9100"
+    # ports:
+    #   - "9100:9100"
     command: ["--bname=Agent", "--bpath=/agent/agent.py", "--host=python-agent", "--port=9100", "--ns"]
   ceml:
-    build: data-processing-agent/
+    #image: fraunhoferfit/ls-la
+    build: data-processing-agent
     depends_on:
+      - mosquitto
       - pyro-ns
       - python-agent
+    environment:
+      - connection_broker_mqtt_hostname=mosquitto
+      - ceml_init_bootstrapping=/config/bootstrapping.json
+      - api_events_mqtt_topic_incoming_SenML=SMTLine/#
+#      - connector_observers_payload_type_class_SenML=eu.linksmart.services.payloads.SenML.Event
     volumes:
       - ./data-processing-agent/config:/config
     ports:
       - "8319:8319"
-  # python-test:
-    # build: 
-      # context: training/
-      # dockerfile: Dockerfile-test
-    # depends_on:
-      # - pyro-ns
-      # - python-agent
+

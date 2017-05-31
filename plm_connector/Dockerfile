@@ -4,10 +4,9 @@ RUN pip install --no-cache-dir paho-mqtt
 
 WORKDIR /home
 
-COPY *.py config/ /home/
-COPY config /home/config
+COPY *.py /home/
 
 VOLUME /config
 
 ENTRYPOINT ["python", "-u", "plm_connector.py"]
-CMD ["-c", "./config/config.json"]
+CMD ["-c", "/config/config.json"]
