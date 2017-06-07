@@ -1,6 +1,6 @@
 """
 Socket Controller Module
-Tweaked for Siemens Plant Simulation 13
+For Siemens PLM Plant Simulation 13
 - Read and parse JSON data stream from a socket
 - Write messages to a socket
 """
@@ -68,13 +68,30 @@ class SocketReader:
 		self.tracker = index
 
 	def socketConnect(self):
+		socket.setdefaulttimeout(5)
+		self.logger.info("Connecting to {}:{}".format(self.host, self.port))
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.sock.connect((self.host, self.port))
+		try:
+			self.sock.connect((self.host, self.port))
+			self.logger.info("Connected.")
+		except Exception as e:
+			self.logger.error("Error connecting: {}".format(e))
+			#self.logger.info("Will retry in 1s...")
+			#time.sleep(1)
+			self.socketConnect()
+
 
 	def worker(self, handler):
 		buffer = ''
 		while self.run_event.is_set():
-			data = self.sock.recv(2048)
+			try:
+				data = self.sock.recv(2048)
+			except Exception as e:
+				self.logger.error("Error reading: {}".format(e))
+				#self.logger.info("Will retry in 1s...")
+				#time.sleep(1)
+				buffer = ''
+				continue
 			if data:
 				data, _ = self.split_packet(data)
 				if data[0] != '':
@@ -99,6 +116,7 @@ class SocketReader:
 
 			else:
 				self.logger.debug("Socket disconnected.")
+				buffer = ''
 				self.socketConnect()
 
 	def start(self, handler):
