@@ -95,3 +95,4 @@ data-processing-agent/.idea/
 *.pkl
 *.txt
 config.json
+generated_*
