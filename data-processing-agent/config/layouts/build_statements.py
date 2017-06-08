@@ -16,6 +16,7 @@ for x in product_types:
         print "Loading " + x+"_layout.json"
         layout = json.load(statement_data_file)
         statement["Model"]["Parameters"]["Classifier"]["production_layout"] = layout
+        statement["Model"]["Parameters"]["Backend"]["RegisteredName"] = "python-agent-"+x
         statement["Name"] = layout["type"]
         with open('generated_'+x+'.json', 'w') as outfile:
             print 'Saving generated_'+x+'.json'

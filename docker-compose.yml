@@ -3,43 +3,27 @@ services:
   mosquitto:
     image: eclipse-mosquitto
     ports:
-      - 1883:1883
+     - 1883:1883
   plm_connector:
     build: plm_connector
     links:
-      - mosquitto
+     - mosquitto
     volumes:
      - ./plm_connector/config:/config
     command: ["-c", "/config/config.json", "-v"]
   pyro-ns:
     image: farshidtz/pyro4-ns
-    # ports:
-    #   - "9090:9090"
-    command: ["--host=pyro-ns"]
+    ports:
+     - "9090-9091:9090-9091"
+    command: ["--host=pyro-ns", "--nathost=localhost", "--natport=9090"]
   python-agent:
     build: training/
     depends_on:
-      - pyro-ns
+     - pyro-ns
     volumes:
-      - ./training/model:/model
-      - ./training/agent:/agent
-    # ports:
-    #   - "9100:9100"
-    command: ["--bname=Agent", "--bpath=/agent/agent.py", "--host=python-agent", "--port=9100", "--ns"]
-  ceml:
-    #image: fraunhoferfit/ls-la
-    build: data-processing-agent
-    depends_on:
-      - mosquitto
-      - pyro-ns
-      - python-agent
-    environment:
-      - connection_broker_mqtt_hostname=mosquitto
-      - ceml_init_bootstrapping=/config/bootstrapping.json
-      - api_events_mqtt_topic_incoming_SenML=SMTLine/#
-#      - connector_observers_payload_type_class_SenML=eu.linksmart.services.payloads.SenML.Event
-    volumes:
-      - ./data-processing-agent/config:/config
+     - ./training/model:/model
+     - ./training/agent:/agent
     ports:
-      - "8319:8319"
-
+     - "9101-9106:9101-9106"
+    #command: ["--bname=Agent", "--bpath=/agent/agent.py", "--host=python-agent", "--port=9100", "--ns", "--nathost=localhost", "--natport=9100"]
+    command: ["6"]

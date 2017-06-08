@@ -5,11 +5,12 @@ WORKDIR /usr/src/app
 
 COPY requirements.txt /usr/src/app/
 COPY pyroAdapter.py /usr/src/app
+COPY manager.sh /usr/src/app
 COPY agent /usr/src/app/agent
 RUN pip install --no-cache-dir -r requirements.txt
 
-ENTRYPOINT ["python", "-u", "pyroAdapter.py"]
+#ENTRYPOINT ["python", "-u", "pyroAdapter.py"]
+ENTRYPOINT ["sh", "manager.sh"]
 
 VOLUME /model
-VOLUME /agent
-EXPOSE 9100
+# Port range: 9100+{1..CMD}

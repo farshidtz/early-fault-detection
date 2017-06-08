@@ -30,10 +30,10 @@
         "RetrainEvery": 100,
         "Backend": {
           "Lookup": true,
-          "NameServer": "pyro-ns",
-          "RegisteredName": "python-agent-0",
+          "NameServer": "localhost",
+          "RegisteredName": "PYRO_OBJECT_NAME",
           "ModuleName": "Agent",
-          "ModulePath": "/home/farshid/thesis/early-fault-detection/training/agent/agent.py"
+          "ModulePath": "path_to_python_script"
         },
         "Classifier": {
           "name": "random_forest",
@@ -46,7 +46,7 @@
             "max_depth": 90,
             "n_jobs": 4
           },
-          "dir": "/home/farshid/thesis/early-fault-detection/training/model/",
+          "dir": "/model/",
           "production_layout": {
             
           }
