@@ -83,14 +83,22 @@ class SocketReader:
 
 	def worker(self, handler):
 		buffer = ''
+		retries = 0
 		while self.run_event.is_set():
 			try:
 				data = self.sock.recv(2048)
+				retries = 0
 			except Exception as e:
-				self.logger.error("Error reading: {}".format(e))
+				retries = retries+1
+				self.logger.error("{}: Error reading: {}".format(retries, e))
 				#self.logger.info("Will retry in 1s...")
 				#time.sleep(1)
 				buffer = ''
+				if(retries>=5):
+					self.logger.info("Restarting the connection...")
+					self.stop()
+					self.start(self.external_handler)
+					break
 				continue
 			if data:
 				data, _ = self.split_packet(data)
@@ -120,6 +128,7 @@ class SocketReader:
 				self.socketConnect()
 
 	def start(self, handler):
+		self.external_handler = handler
 		self.socketConnect()
 		self.run_event.set()
 		self.t = threading.Thread(target=self.worker, args=(handler,))
