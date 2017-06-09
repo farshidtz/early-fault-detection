@@ -41,15 +41,15 @@ def outgoingHandler(json_obj):
         mcc = model['Evaluator']['WindowEvaluators'][0]['evaluationAlgorithms']['MatthewsCorrelationCoefficient']['result']
         scm = model['Evaluator']['WindowEvaluators'][0]['sequentialConfusionMatrix'][0]
         logger.debug("{}: Prediction for {} with MCC:{:0.2f} SCM:{} -> {}".format(model['Name'], result['originalInput']['id'], mcc, scm, result['prediction']))
-        #if result['prediction']==1:
-        id = result['originalInput']['id']
-        type = result['originalInput']['type']
-        s = id.split('/')
-        s.insert(2, type)
-        s.insert(len(s)-1, str(result['prediction']))
-        id = '/'.join(s)
-        logger.debug("->PLM {}".format(id))
-        sock_writer.send(id)
+        if result['prediction']==1:
+            pid = result['originalInput']['id']
+            ptype = result['originalInput']['type']
+            s = pid.split('/')
+            s.insert(2, ptype)
+            s.insert(len(s)-1, str(result['prediction']))
+            pid = '/'.join(s)
+            logger.debug("->PLM {}".format(pid))
+            sock_writer.send(pid)
     except KeyError as e:
         logger.error("Key not found: {}".format(e))
 
