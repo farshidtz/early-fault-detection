@@ -62,7 +62,7 @@ class MQTTSubscriber:
 			# user-defined handler
 			self.handler(json.loads(msg.payload))
 		except Exception as ex:
-			self.logger.info("Topic: %s Message: %s" % (msg.topic, str(msg.payload)))
+			self.logger.debug("Topic: %s Message: %s" % (msg.topic, str(msg.payload)))
 			self.logger.error(ex)
 
 	def stop(self):

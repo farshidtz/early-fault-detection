@@ -82,6 +82,7 @@ class SocketReader:
 
 
 	def worker(self, handler):
+		self.logger.info("Listenning...")
 		buffer = ''
 		retries = 0
 		while self.run_event.is_set():
@@ -93,7 +94,7 @@ class SocketReader:
 				self.logger.error("{}: Error reading: {}".format(retries, e))
 				#self.logger.info("Will retry in 1s...")
 				#time.sleep(1)
-				buffer = ''
+				#buffer = ''
 				if(retries>=5):
 					self.logger.info("Restarting the connection...")
 					self.stop()
