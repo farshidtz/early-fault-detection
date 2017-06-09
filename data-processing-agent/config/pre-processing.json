@@ -1,8 +1,0 @@
-{
-    "name":"collectMeasurements",
-    "statement":"select begin.bn as bn, entries.countOf() as total, begin as type, entries.selectFrom(i=>i.last) as entries, fin as label from pattern[ every ((begin=SenML(last.n='Source/ProdType' and last.sv='ABU1')) -> (entries=SenML(begin.bn=bn)) until (fin=SenML(last.n='FunctionTest/Quality_OK' and begin.bn=bn)))]"
-}
-{
-    "name":"collectMeasurements",
-    "statement":"select entries.countOf() as total, begin as type, new{bn=begin.bn, e=entries.selectFrom(i=>new{n=i.last.n, v=i.last.v, u=i.last.u, t=i.bt})} as measurements, fin as label from pattern[ every ((begin=SenML(last.n='Source/ProdType')) -> (entries=SenML(begin.bn=bn)) until (fin=SenML(last.n='FunctionTest/Quality_OK' and begin.bn=bn)))]"
-}
