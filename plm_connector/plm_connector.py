@@ -36,17 +36,20 @@ subscriber = MQTTSubscriber(conf['mqtt']['broker_host'], conf['mqtt']['broker_po
 
 def outgoingHandler(json_obj):
     try:
-        result = json_obj['LastPrediction']
-        model = json_obj['Model']
-        mcc = model['Evaluator']['WindowEvaluators'][0]['evaluationAlgorithms']['MatthewsCorrelationCoefficient']['result']
-        scm = model['Evaluator']['WindowEvaluators'][0]['sequentialConfusionMatrix'][0]
-        logger.debug("Prediction for {}:{} with MCC:{:0.2f} SCM:{} -> {}".format(model['Name'], result['originalInput']['id'], mcc, scm, result['prediction']))
-        if result['prediction']==1:
-            pid = result['originalInput']['id']
-            ptype = result['originalInput']['type']
+        # result = json_obj['LastPrediction']
+        result = json_obj['ResultValue']
+        pid = result['originalInput']['id']
+        ptype = result['originalInput']['type']
+        prediction = result['prediction']
+        # model = json_obj['Model']
+        # mcc = model['Evaluator']['WindowEvaluators'][0]['evaluationAlgorithms']['MatthewsCorrelationCoefficient']['result']
+        # scm = model['Evaluator']['WindowEvaluators'][0]['sequentialConfusionMatrix'][0]
+        # logger.debug("Prediction for {}:{} with MCC:{:0.2f} SCM:{} -> {}".format(ptype, result['originalInput']['id'], mcc, scm, prediction))
+        logger.debug("Prediction for {}:{}-> {}".format(ptype, result['originalInput']['id'], prediction))
+        if prediction==1:
             s = pid.split('/')
             s.insert(2, ptype)
-            s.insert(len(s)-1, str(result['prediction']))
+            s.insert(len(s)-1, str(prediction))
             pid = '/'.join(s)
             logger.debug("->PLM {}".format(pid))
             sock_writer.send(pid)

@@ -13,17 +13,35 @@ services:
     command: ["-c", "/config/config.json", "-v"]
   pyro-ns:
     image: farshidtz/pyro4-ns
-    ports:
-     - "9090-9091:9090-9091"
-    command: ["--host=pyro-ns", "--nathost=localhost", "--natport=9090"]
+    # ports:
+    #  - "9090-9091:9090-9091"
+    command: ["--host=pyro-ns", "--nathost=pyro-ns", "--natport=9090"]
   python-agent:
-    build: training/
+    build: training
     depends_on:
      - pyro-ns
     volumes:
      - ./training/model:/model
      - ./training/agent:/agent
-    ports:
-     - "9101-9106:9101-9106"
+    # ports:
+    #  - "9101-9106:9101-9106"
     #command: ["--bname=Agent", "--bpath=/agent/agent.py", "--host=python-agent", "--port=9100", "--ns", "--nathost=localhost", "--natport=9100"]
     command: ["6"]
+  dpa:
+    build: data-processing-agent
+    links:
+     - pyro-ns
+     - python-agent
+     - mosquitto
+    volumes:
+     - ./data-processing-agent/config:/config
+    ports:
+     - "8319:8319"
+    entrypoint: bash -c "dockerize 
+      -wait tcp://python-agent:9101 
+      -wait tcp://python-agent:9102 
+      -wait tcp://python-agent:9103 
+      -wait tcp://python-agent:9104 
+      -wait tcp://python-agent:9105 
+      -wait tcp://python-agent:9106 &&
+      java -jar iot.learning.agent-1.4.0-SNAPSHOT-jar-with-dependencies.jar"

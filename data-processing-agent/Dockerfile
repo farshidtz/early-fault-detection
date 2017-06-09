@@ -1,15 +1,16 @@
-FROM java:openjdk-8-jre
+FROM java:openjdk-8-jre-alpine
 
-COPY *.jar /usr/src/app/
-WORKDIR /usr/src/app
+RUN apk add --no-cache openssl bash
 
-#ENV CLASSPATH .:./lib/ceml-1.4.0-SNAPSHOT.jar
+ENV DOCKERIZE_VERSION v0.4.0
+RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-alpine-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
+    && tar -C /usr/local/bin -xzvf dockerize-alpine-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
+    && rm dockerize-alpine-linux-amd64-$DOCKERIZE_VERSION.tar.gz
 
-ENV env_var_enabled=true
-ENV cep_init_engines=eu.linksmart.services.event.cep.engines.EsperEngine
-ENV agent_init_extensions=eu.linksmart.services.event.ceml.core.CEML
+COPY . /home
+WORKDIR /home
 
-ENTRYPOINT ["java", "-jar", "iot.learning.universal.agent-1.5.0-20170531.113430-5.jar"]
+RUN ln -s /config/conf.cfg ./conf.cfg
 
 VOLUME /config
 EXPOSE 8319

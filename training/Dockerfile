@@ -14,3 +14,4 @@ ENTRYPOINT ["sh", "manager.sh"]
 
 VOLUME /model
 # Port range: 9100+{1..CMD}
+EXPOSE 9101-9106
