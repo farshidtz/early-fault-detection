@@ -75,7 +75,7 @@ class SocketReader:
 			self.sock.connect((self.host, self.port))
 			self.logger.info("Connected.")
 		except Exception as e:
-			self.logger.error("Error connecting: {}".format(e))
+			self.logger.error("connect: {}".format(e))
 			#self.logger.info("Will retry in 1s...")
 			#time.sleep(1)
 			self.socketConnect()
@@ -91,7 +91,7 @@ class SocketReader:
 				retries = 0
 			except Exception as e:
 				retries = retries+1
-				self.logger.error("{}: Error reading: {}".format(retries, e))
+				self.logger.error("recv: {} ({})".format(e, retries))
 				#self.logger.info("Will retry in 1s...")
 				#time.sleep(1)
 				#buffer = ''
@@ -99,7 +99,7 @@ class SocketReader:
 					self.logger.info("Restarting the connection...")
 					self.stop()
 					self.start(self.external_handler)
-					break
+					return
 				continue
 			if data:
 				data, _ = self.split_packet(data)

@@ -57,7 +57,7 @@ class Agent(object):
 
     def predict(self, datapoint):
         self.counter += 1
-        print("agent.predict: {}<-{} {}".format(self.production_layout["type"], datapoint['type'], self.counter))
+        #print("agent.predict: {}<-{} {}".format(self.production_layout["type"], datapoint['type'], self.counter))
         # return 1
 
         if not self.fitted:
@@ -73,7 +73,7 @@ class Agent(object):
         r[w] = self.means[w]
         start_time = time.time()
         p = self.clf.predict(r.reshape(1, -1))[0]
-        print("Prediction: {} in {}s".format(p, time.time() - start_time))
+        print("Prediction for {}:{} in {}s -> {}".format(datapoint['type'], datapoint['id'], time.time() - start_time, p))
         return p.item()
 
     # Take random numbers from a logistic probability density function
