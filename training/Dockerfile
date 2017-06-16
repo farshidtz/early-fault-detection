@@ -9,9 +9,7 @@ COPY manager.sh /usr/src/app
 COPY agent /usr/src/app/agent
 RUN pip install --no-cache-dir -r requirements.txt
 
-#ENTRYPOINT ["python", "-u", "pyroAdapter.py"]
-ENTRYPOINT ["sh", "manager.sh"]
+ENTRYPOINT ["python", "-u", "pyroAdapter.py"]
 
 VOLUME /model
-# Port range: 9100+{1..CMD}
-EXPOSE 9101-9106
+EXPOSE 9100

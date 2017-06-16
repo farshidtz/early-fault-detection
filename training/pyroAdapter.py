@@ -9,7 +9,9 @@ from optparse import OptionParser
 
 class PyroAdapter(object):
     def __init__(self):
-        self.backend = backendModule
+        # TODO: move this to build(...) to support different backends on one pyro server
+        module = imp.load_source(OPTIONS.bname, OPTIONS.bpath)
+        self.backend = getattr(module, OPTIONS.bname)()
 
     @Pyro4.expose
     def build(self, classifier):
@@ -89,9 +91,8 @@ def main(options):
     backendDir = os.path.dirname(options.bpath)
     sys.path.append(backendDir)
 
-    module = imp.load_source(options.bname, options.bpath)
-    global backendModule
-    backendModule = getattr(module, options.bname)()
+    global OPTIONS
+    OPTIONS = options
 
     startPyro(options)
 

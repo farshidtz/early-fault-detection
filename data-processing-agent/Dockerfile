@@ -1,4 +1,4 @@
-FROM java:openjdk-8-jre-alpine
+FROM fraunhoferfit/ls-la
 
 RUN apk add --no-cache openssl bash
 
@@ -9,8 +9,6 @@ RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSI
 
 COPY . /home
 WORKDIR /home
-
-RUN ln -s /config/conf.cfg ./conf.cfg
 
 VOLUME /config
 EXPOSE 8319
