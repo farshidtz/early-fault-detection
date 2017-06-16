@@ -1,1 +1,0 @@
-docker run -p 9090:9090 -h pyro-ns farshidtz/pyro4-ns --host=pyro-ns
