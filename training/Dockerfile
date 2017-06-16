@@ -5,7 +5,6 @@ WORKDIR /usr/src/app
 
 COPY requirements.txt /usr/src/app/
 COPY pyroAdapter.py /usr/src/app
-COPY manager.sh /usr/src/app
 COPY agent /usr/src/app/agent
 RUN pip install --no-cache-dir -r requirements.txt
 
