@@ -10,7 +10,7 @@ services:
      - mosquitto
     volumes:
      - ./plm_connector/config:/config
-    command: ["-c", "/config/config.json", "-v"]
+    command: ["-c", "/config/config.json"]
   pyro-ns:
     image: farshidtz/pyro4-ns
     # ports:

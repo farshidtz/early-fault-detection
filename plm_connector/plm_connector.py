@@ -51,7 +51,7 @@ def outgoingHandler(json_obj):
             s.insert(2, ptype)
             s.insert(len(s)-1, str(prediction))
             pid = '/'.join(s)
-            logger.debug("->PLM {}".format(pid))
+            logger.info("Sending feedback->PLM {}".format(pid))
             sock_writer.send(pid)
     except KeyError as e:
         logger.error("Key not found: {}".format(e))
