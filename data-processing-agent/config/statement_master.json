@@ -40,7 +40,7 @@
         "Backend": {
           "Lookup": true,
           "NameServer": "pyro-ns",
-          "RegisteredName": "PYRO_OBJECT_NAME",
+          "RegisteredName": "python-agent-0",
           "ModuleName": "Agent",
           "ModulePath": "path_to_python_script"
         },
