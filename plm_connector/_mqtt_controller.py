@@ -7,7 +7,7 @@ import paho.mqtt.client as mqtt
 import json
 import logging
 
-logging_formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s:\t %(message)s')
+logging_formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s:\t %(message)s')
 h = logging.StreamHandler()
 h.setFormatter(logging_formatter)
 loggingLevel = logging.DEBUG

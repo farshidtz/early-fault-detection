@@ -3,7 +3,7 @@ Training / Prediction Agent
 """
 
 import numpy as np
-import random, json, time, thread, threading
+import random, json, time, thread, threading, logging
 from scipy.stats import logistic
 from collections import deque
 from sklearn.externals import joblib
@@ -12,6 +12,9 @@ from os import path, makedirs
 from _converter import SensorThings2Dict, Event2Dict, validate
 from _evaluation import print_metrics
 import _models
+
+logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
+logger = logging.getLogger(__file__)
 
 """
 Quality_OK is mapped to Faultiness
@@ -24,11 +27,10 @@ _true = "true"
 class Agent(object):
 
     def build(self, classifier):
-        print("agent.build: %s" % classifier)
+        logger.info("agent.build: %s" % classifier)
         self.loadParameters(classifier)
         self.fitted = False
         self.data = deque([], maxlen=20000)
-        self.counter = 0
         self.lock = threading.Lock()
 
         if not path.exists(self.model_dir):
@@ -41,27 +43,24 @@ class Agent(object):
             self.means = joblib.load(self.path('means.pkl'))
             self.data = joblib.load(self.path('data.pkl'))
             self.fitted = True
-            print("Loaded pre-trained model from disk.")
+            logger.info("Loaded pre-trained model from disk.")
             return
 
         # construct the classifier
         self.clf = getattr(_models, self.clf_name)(self.clf_conf)
-        print("Built a new %s classifier" % self.clf_name)
+        logger.info("Built a new %s classifier" % self.clf_name)
 
         # self.pre_train(["C:/Users/Farshid/Desktop/thesis/early-fault-detection/training/agent/ABU1.txt"])
         # return self.clf
 
     def learn(self, datapoint):
-        print("agent.learn: %s" % "datapoint")
+        logger.info("agent.learn: %s" % "datapoint")
         raise NotImplementedError
 
     def predict(self, datapoint):
-        self.counter += 1
-        #print("agent.predict: {}<-{} {}".format(self.production_layout["type"], datapoint['type'], self.counter))
-        # return 1
 
         if not self.fitted:
-            print("Model not trained yet.")
+            logger.info("Model not trained yet.")
             return 0
 
         features = Event2Dict(datapoint, self.production_layout, complete=False)
@@ -73,7 +72,7 @@ class Agent(object):
         r[w] = self.means[w]
         start_time = time.time()
         p = self.clf.predict(r.reshape(1, -1))[0]
-        print("Prediction for {}:{} in {}s -> {}".format(datapoint['type'], datapoint['id'], time.time() - start_time, p))
+        logger.info("Prediction for {}:{} in {:0.2f}s -> {}".format(datapoint['type'], datapoint['id'], time.time() - start_time, p))
         return p.item()
 
     # Take random numbers from a logistic probability density function
@@ -83,8 +82,7 @@ class Agent(object):
         return np.random.choice(total, size=sample_size, replace=replace, p=p)
 
     def batchLearn(self, datapoints):
-        # self.counter += len(datapoints)
-        print("agent.batchLearn: %s" % self.counter)
+        logger.info("agent.batchLearn.")
         with self.lock:
             for datapoint in datapoints:
                 try:
@@ -92,15 +90,15 @@ class Agent(object):
                     features = np.asarray(features.values())
                     self.data.append(features)
                 except Exception as e:
-                    print(e)
+                    logger.error(e)
 
             train = np.asarray(self.data)
             # print(train)
             faulty = train[train[:,-1]==_false]
             not_faulty = train[train[:,-1]==_true]
-            print("Train Total: {} Good: {} Faulty: {} Ratio: {}".format(len(train), len(not_faulty), len(faulty), len(faulty)/float(len(train))))
+            logger.info("Train Total: {} Good: {} Faulty: {} Ratio: {}".format(len(train), len(not_faulty), len(faulty), len(faulty)/float(len(train))))
             if(len(faulty)==0 or len(not_faulty)==0):
-                print("Waiting for samples from both classes.")
+                logger.info("Waiting for samples from both classes.")
                 return
 
             sample_size = np.min([5000, len(not_faulty)])
@@ -111,7 +109,7 @@ class Agent(object):
             # Put samples together and shuffle
             train = np.concatenate((not_faulty[samples], faulty[f_samples]))
             train = np.random.permutation(train)
-            print("Resampled Train Total: {} Good: {} Faulty: {} Ratio: {}".format(len(train), len(samples), len(f_samples), len(f_samples)/float(len(train))))
+            logger.info("Resampled Train Total: {} Good: {} Faulty: {} Ratio: {}".format(len(train), len(samples), len(f_samples), len(f_samples)/float(len(train))))
 
             train_data = train[:,2:-1].astype(np.float32)
             train_labels = np.array(train[:,-1]==_false).astype(np.int32)
@@ -124,7 +122,7 @@ class Agent(object):
             # re-calculate means of this sub-sample
             self.means = np.mean(not_faulty[samples,2:-1].astype(np.float32), axis=0)
 
-            print("Trained in {}s".format(time.time() - start_time))
+            logger.info("Trained in {:0.2f}s".format(time.time() - start_time))
             #print_metrics(train_labels, self.clf.predict(train_data))
 
             # Save model to disk
@@ -132,11 +130,10 @@ class Agent(object):
             thread.start_new_thread(self.saveModel, (deepcopy(self.clf), deepcopy(self.means), deepcopy(self.data),))
 
     def batchPredict(self, datapoints):
-        self.counter += len(datapoints)
-        print("agent.batchPredict: %s" % self.counter)
+        logger.info("agent.batchPredict.")
         # return np.zeros(len(datapoints)).astype(int).tolist()
         if not self.fitted:
-            print("Model not trained yet.")
+            logger.info("Model not trained yet.")
             return np.zeros(len(datapoints)).astype(int).tolist()
 
         data = []
@@ -150,29 +147,29 @@ class Agent(object):
                 # fill nans with global means
                 w = np.where(np.isnan(features))
                 if np.any(w):
-                    print("Missing: {}".format(validate(datapoint, self.production_layout)))
+                    logger.warning("Missing: {}".format(validate(datapoint, self.production_layout)))
                 features[w] = self.means[w]
 
                 data.append(features)
             except Exception as e:
-                print(e)
+                logger.error(e)
 
         data = np.asarray(data)
         start_time = time.time()
         try:
             predictions = self.clf.predict(data)
         except Exception as e:
-            print(e)
-            print("Data: {}".format(json.dumps(data)))
-            print("Batch prediction failed.")
+            logger.error(e)
+            logger.debug("Data: {}".format(json.dumps(data)))
+            logger.info("Batch prediction failed.")
             return np.zeros(len(datapoints)).astype(int).tolist()
 
-        print("Batch Prediction in {}s".format(time.time() - start_time))
+        logger.info("Batch Prediction in {:0.2f}s".format(time.time() - start_time))
         return predictions.tolist()
 
 
     def destroy(self):
-        print("agent.destroy")
+        logger.info("agent.destroy")
 
     def exportModel(self):
         raise NotImplementedError
@@ -205,9 +202,9 @@ class Agent(object):
             joblib.dump(means, self.path('means.pkl'))
             joblib.dump(data, self.path('data.pkl'))
         except Exception as e:
-            print("Unable to save model.")
+            logger.error("Unable to save model.")
             raise IOError(str(e))
-        print("Saved to {} in {}s".format(self.model_dir, time.time() - start_time))
+        logger.info("Saved to {} in {:0.2f}s".format(self.model_dir, time.time() - start_time))
 
     # def pre_train(self, training_files):
     #     print("agent.pre_train: %s" % training_files)

@@ -3,15 +3,21 @@
  PyroAdapter exposes an external learning module via Pyro4
 """
 import Pyro4
-import sys, imp, os
+import sys, imp, os, logging
 from optparse import OptionParser
 
+logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
+logger = logging.getLogger(__file__)
 
 class PyroAdapter(object):
     def __init__(self):
+        logger.info("Initializing Pyro object.")
         # TODO: move this to build(...) to support different backends on one pyro server
-        module = imp.load_source(OPTIONS.bname, OPTIONS.bpath)
-        self.backend = getattr(module, OPTIONS.bname)()
+        try:
+            module = imp.load_source(OPTIONS.bname, OPTIONS.bpath)
+            self.backend = getattr(module, OPTIONS.bname)()
+        except Exception as e:
+            logger.error(e)
 
     @Pyro4.expose
     def build(self, classifier):
@@ -58,7 +64,7 @@ def startPyro(options):
             ns = Pyro4.locateNS()
             ns.register(options.rname, uri)
         except Exception as e:
-            print("Exception: {}".format(e))
+            logger.error(e)
             raise SystemExit
 
     daemon.requestLoop()
@@ -79,7 +85,7 @@ def parseArgs():
     # check mangatory args
     for opt in mandatoryArgs:
         if not getattr(options, opt):
-            print("Argument `{}` not given.".format(opt))
+            logger.error("Argument `{}` not given.".format(opt))
             parser.print_help()
             sys.exit(2)
 

@@ -14,7 +14,7 @@ parser.add_argument("-c", "--conf", help="path to config file", required=True)
 args = parser.parse_args()
 
 # Setup logging
-logging_formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s:\t %(message)s')
+logging_formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s: %(message)s')
 h = logging.StreamHandler()
 h.setFormatter(logging_formatter)
 logger = logging.getLogger(__name__)

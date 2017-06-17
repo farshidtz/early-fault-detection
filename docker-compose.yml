@@ -22,10 +22,9 @@ services:
      - pyro-ns
     volumes:
      - ./training/model:/model
-     - ./training/agent:/agent
     # ports:
     #  - "9100:9100"
-    command: ["--bname=Agent", "--bpath=/agent/agent.py", "--rname=python-agent-0", "--host=python-agent", "--port=9100", "--ns"]
+    command: ["--bname=Agent", "--bpath=agent/agent.py", "--rname=python-agent-0", "--host=python-agent", "--port=9100", "--ns"]
   dpa:
     build: data-processing-agent
     links:
