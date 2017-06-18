@@ -7,10 +7,9 @@ import paho.mqtt.client as mqtt
 import json
 import logging
 
-logging_formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s:\t %(message)s')
-h = logging.StreamHandler()
-h.setFormatter(logging_formatter)
-loggingLevel = logging.DEBUG
+# Setup logging
+log_level = logging.INFO
+logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=log_level)
 
 class MQTTPublisher:
 
@@ -18,8 +17,6 @@ class MQTTPublisher:
 		self.client = mqtt.Client(client_id)
 		self.client.connect(host, port)
 		self.logger = logging.getLogger(__name__)
-		self.logger.setLevel(loggingLevel)
-		self.logger.addHandler(h)
 
 	# de-serialize and publish json
 	def publish(self, topic, json_obj, qos=0):
@@ -37,10 +34,7 @@ class MQTTSubscriber:
 		self.host = host
 		self.port = port
 		self.client = mqtt.Client(client_id)
-
 		self.logger = logging.getLogger(__name__)
-		self.logger.setLevel(loggingLevel)
-		self.logger.addHandler(h)
 
 	def subscribe(self, topic, handler, qos=0):
 		self.topic = topic
@@ -62,7 +56,7 @@ class MQTTSubscriber:
 			# user-defined handler
 			self.handler(json.loads(msg.payload))
 		except Exception as ex:
-			self.logger.debug("Topic: %s Message: %s" % (msg.topic, str(msg.payload)))
+			self.logger.info("Topic: %s Message: %s" % (msg.topic, str(msg.payload)))
 			self.logger.error(ex)
 
 	def stop(self):

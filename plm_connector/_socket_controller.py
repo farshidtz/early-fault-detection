@@ -12,10 +12,9 @@ import logging
 import time
 import threading
 
-logging_formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s:\t %(message)s')
-h = logging.StreamHandler()
-h.setFormatter(logging_formatter)
-loggingLevel = logging.DEBUG
+# Setup logging
+log_level = logging.INFO
+logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=log_level)
 
 class SocketReader:
 
@@ -24,8 +23,6 @@ class SocketReader:
 		self.port = port
 		self.run_event = threading.Event()
 		self.logger = logging.getLogger(__name__)
-		self.logger.setLevel(loggingLevel)
-		self.logger.addHandler(h)
 
 	# split packet into json strings
 	def split_packet(self, data):
@@ -118,13 +115,13 @@ class SocketReader:
 							# self.logger.info(json_obj)
 							handler(json_obj)
 						else:
-							self.logger.debug("Bad data: " + msg)
+							self.logger.warning("Bad data: " + msg)
 
 				buffer = self.iterator(data[1:], handler)
 				#print ""
 
 			else:
-				self.logger.debug("Socket disconnected.")
+				self.logger.info("Socket disconnected.")
 				buffer = ''
 				self.socketConnect()
 
@@ -146,8 +143,6 @@ class SocketWriter:
 		self.host = host
 		self.port = port
 		self.logger = logging.getLogger(__name__)
-		self.logger.setLevel(loggingLevel)
-		self.logger.addHandler(h)
 
 	def send(self, message):
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

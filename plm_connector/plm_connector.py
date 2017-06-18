@@ -15,10 +15,11 @@ args = parser.parse_args()
 
 # Setup logging
 log_level = logging.INFO
+# TODO: enable debug with environment variable
 if args.verbose:
     log_level = logging.DEBUG
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=log_level)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__file__)
 
 # Load configurations
 with open(args.conf, 'r') as f:
