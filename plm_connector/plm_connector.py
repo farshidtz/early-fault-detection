@@ -14,13 +14,11 @@ parser.add_argument("-c", "--conf", help="path to config file", required=True)
 args = parser.parse_args()
 
 # Setup logging
-logging_formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s: %(message)s')
-h = logging.StreamHandler()
-h.setFormatter(logging_formatter)
-logger = logging.getLogger(__name__)
+log_level = logging.INFO
 if args.verbose:
-    logger.setLevel(logging.DEBUG)
-logger.addHandler(h)
+    log_level = logging.DEBUG
+logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=log_level)
+logger = logging.getLogger(__name__)
 
 # Load configurations
 with open(args.conf, 'r') as f:
