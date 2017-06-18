@@ -7,9 +7,6 @@ import paho.mqtt.client as mqtt
 import json
 import logging
 
-# Setup logging
-log_level = logging.INFO
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=log_level)
 
 class MQTTPublisher:
 

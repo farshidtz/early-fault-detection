@@ -12,9 +12,6 @@ import logging
 import time
 import threading
 
-# Setup logging
-log_level = logging.INFO
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=log_level)
 
 class SocketReader:
 
