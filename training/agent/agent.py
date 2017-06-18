@@ -3,7 +3,7 @@ Training / Prediction Agent
 """
 
 import numpy as np
-import random, json, time, thread, threading, logging
+import random, json, time, thread, threading, logging, traceback
 from scipy.stats import logistic
 from collections import deque
 from sklearn.externals import joblib
@@ -72,7 +72,7 @@ class Agent(object):
         r[w] = self.means[w]
         start_time = time.time()
         p = self.clf.predict(r.reshape(1, -1))[0]
-        logger.info("Prediction for {}:{} in {:0.2f}s -> {}".format(datapoint['type'], datapoint['id'], time.time() - start_time, p))
+        logger.info("Prediction for {}:{} in {:0.3f}s -> {}".format(datapoint['type'], datapoint['id'], time.time() - start_time, p))
         return p.item()
 
     # Take random numbers from a logistic probability density function
@@ -122,7 +122,7 @@ class Agent(object):
             # re-calculate means of this sub-sample
             self.means = np.mean(not_faulty[samples,2:-1].astype(np.float32), axis=0)
 
-            logger.info("Trained in {:0.2f}s".format(time.time() - start_time))
+            logger.info("Trained in {:0.3f}s".format(time.time() - start_time))
             #print_metrics(train_labels, self.clf.predict(train_data))
 
             # Save model to disk
@@ -153,6 +153,7 @@ class Agent(object):
                 data.append(features)
             except Exception as e:
                 logger.error(e)
+                logger.debug(traceback.format_exc())
 
         data = np.asarray(data)
         start_time = time.time()
@@ -164,7 +165,7 @@ class Agent(object):
             logger.info("Batch prediction failed.")
             return np.zeros(len(datapoints)).astype(int).tolist()
 
-        logger.info("Batch Prediction in {:0.2f}s".format(time.time() - start_time))
+        logger.info("Batch Prediction in {:0.3f}s".format(time.time() - start_time))
         return predictions.tolist()
 
 
@@ -204,7 +205,7 @@ class Agent(object):
         except Exception as e:
             logger.error("Unable to save model.")
             raise IOError(str(e))
-        logger.info("Saved to {} in {:0.2f}s".format(self.model_dir, time.time() - start_time))
+        logger.info("Saved to {} in {:0.3f}s".format(self.model_dir, time.time() - start_time))
 
     # def pre_train(self, training_files):
     #     print("agent.pre_train: %s" % training_files)
