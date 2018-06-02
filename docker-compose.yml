@@ -12,7 +12,7 @@ services:
      - ./plm_connector/config:/config
     command: ["-c", "/config/config.json"]
   pyro-ns:
-    image: farshidtz/pyro4-ns
+    image: farshidtz/pyro4-ns:4.53
     # ports:
     #  - "9090-9091:9090-9091"
     command: ["--host=pyro-ns"]
