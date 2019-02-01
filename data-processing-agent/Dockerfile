@@ -1,4 +1,4 @@
-FROM fraunhoferfit/ls-la
+FROM farshidtz/early-fault-detection:la
 
 RUN apk add --no-cache openssl bash
 
